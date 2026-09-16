@@ -671,9 +671,13 @@ ipcMain.handle("save-output-file", async function (event, payload) {
     filters: saveDialogFilters(payload.defaultFilename)
   });
   if (result.canceled || !result.filePath) return { saved: false };
+  if (!fs.existsSync(payload.outputPath)) throw new Error("SOURCE_MISSING");
   var filePath = savePathWithExt(result.filePath, payload.defaultFilename);
+  // The temp result is deliberately left in place: the row stays "готово"
+  // with an active save button, so saving the same result a second time
+  // (another folder, another name) has to keep working. Deleting it here
+  // made every repeat save fail with ENOENT. before-quit wipes the dir.
   await fs.promises.copyFile(payload.outputPath, filePath);
-  fs.unlink(payload.outputPath, function () {});
   return { saved: true, path: filePath };
 });
 
@@ -701,10 +705,26 @@ function uniqueDestPath(folderPath, filename) {
 // (buffer for images, path-copy for video/audio/documents) but writes
 // straight into the chosen folder instead of opening a dialog each time.
 ipcMain.handle("save-to-folder", async function (event, payload) {
+  // A missing source and a missing destination folder both surface as plain
+  // ENOENT from copyFile, which produced a confidently wrong message ("файл
+  // не найден" when it was really the folder). Check them apart instead.
+  if (payload.outputPath && !fs.existsSync(payload.outputPath)) {
+    throw new Error("SOURCE_MISSING");
+  }
+  if (!fs.existsSync(payload.folderPath)) {
+    // A remembered default folder can be renamed, deleted or living on a
+    // drive that's no longer attached — recreate it when that's possible.
+    try {
+      fs.mkdirSync(payload.folderPath, { recursive: true });
+    } catch (e) {
+      throw new Error("FOLDER_UNAVAILABLE");
+    }
+  }
   var dest = uniqueDestPath(payload.folderPath, payload.filename);
   if (payload.outputPath) {
+    // Same as save-output-file: the temp result stays put so the file can be
+    // saved again afterwards.
     await fs.promises.copyFile(payload.outputPath, dest);
-    fs.unlink(payload.outputPath, function () {});
   } else {
     fs.writeFileSync(dest, Buffer.from(payload.buffer));
   }

@@ -2477,6 +2477,16 @@
     if (code === "too_large") return "Файл больше 16 МБ — сожмите сильнее";
     if (code === "rejected_extension") return "Этот формат нельзя сохранить";
     if (code === "rate_limited") return "Уже идёт сохранение — подождите";
+    // Electron wraps whatever the main process threw into the message, so the
+    // OS reason (нет прав, диск заполнен, файл занят) is in there — surfacing
+    // it beats a blanket "не удалось", which said nothing about what to fix.
+    var raw = err && err.message ? String(err.message) : "";
+    if (raw.indexOf("SOURCE_MISSING") !== -1) return "Файл-результат не найден — нажмите «Применить» ещё раз";
+    if (raw.indexOf("FOLDER_UNAVAILABLE") !== -1) return "Папка для сохранения недоступна — выберите другую";
+    if (raw.indexOf("ENOENT") !== -1) return "Папка или файл не найдены";
+    if (raw.indexOf("EACCES") !== -1 || raw.indexOf("EPERM") !== -1) return "Нет прав на запись в эту папку";
+    if (raw.indexOf("ENOSPC") !== -1) return "На диске не хватает места";
+    if (raw.indexOf("EBUSY") !== -1) return "Файл занят другой программой";
     return "Не удалось сохранить файл";
   }
 
@@ -3902,6 +3912,7 @@
     downloadAllBtn.disabled = true;
     var usedNames = {};
     var failed = 0;
+    var firstError = "";
     var i = 0;
 
     function finish(message) {
@@ -3912,7 +3923,11 @@
 
     function next() {
       if (i >= doneItems.length) {
-        finish(failed > 0 ? failed + " файл(ов) не удалось сохранить" : doneItems.length + " файл(ов) сохранено");
+        // A bare failure count left nothing to act on — the reason for the
+        // first failure says what actually needs fixing.
+        finish(failed > 0
+          ? failed + " файл(ов) не удалось сохранить: " + firstError
+          : doneItems.length + " файл(ов) сохранено");
         return;
       }
       var item = doneItems[i];
@@ -3930,6 +3945,7 @@
         next();
       }).catch(function (err) {
         console.error("Save to folder failed:", err);
+        if (!firstError) firstError = errorMessage(err);
         failed++;
         i++;
         next();

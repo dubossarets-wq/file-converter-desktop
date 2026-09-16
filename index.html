@@ -1338,7 +1338,7 @@
       </label>
       <span class="row-label-group">
         <label for="useDefaultFolderToggle" style="margin:0;">Сохранять сразу в папку</label>
-        <span class="tip" tabindex="0" data-tip="Без диалога «Сохранить как» на каждый файл — все результаты сразу идут в выбранную папку."></span>
+        <span class="tip" tabindex="0" data-tip="Выключено — каждый файл сохраняется рядом со своим оригиналом. Включено — все результаты идут в одну выбранную папку."></span>
       </span>
     </div>
     <button class="btn-ghost btn" id="chooseDefaultFolderBtn" style="display:none;">Выбрать папку</button>
@@ -1768,7 +1768,7 @@
     </div>
     <div style="display:flex; gap:10px;">
       <button class="btn-ghost btn" id="clearAllBtn">Очистить</button>
-      <button class="btn" id="downloadAllBtn" title="Диалог сохранения на каждый файл">Сохранить все файлы</button>
+      <button class="btn" id="downloadAllBtn">Сохранить все файлы</button>
     </div>
   </div>
 
@@ -2404,7 +2404,7 @@
     toastTimer = setTimeout(function () { toastEl.classList.remove("visible"); }, 3200);
   }
 
-  function saveFile(filename, blob) {
+  function saveFile(filename, blob, defaultDir) {
     if (window.claude && window.claude.downloads) {
       return window.claude.downloads.save({ filename: filename, data: blob });
     }
@@ -2414,7 +2414,7 @@
       // is fine for a small image but for a multi-hundred-MB video job
       // it froze the renderer (that was the "dark screen" bug).
       return blob.arrayBuffer().then(function (buffer) {
-        return window.desktopAPI.saveFile(buffer, filename);
+        return window.desktopAPI.saveFile(buffer, filename, defaultDir);
       }).then(function (result) {
         if (!result.saved) {
           var err = new Error("declined");
@@ -2451,7 +2451,7 @@
       return saveToDefaultFolder(item, filename);
     }
     if (item.outputPath && window.desktopAPI && window.desktopAPI.saveOutputFile) {
-      return window.desktopAPI.saveOutputFile(item.outputPath, filename).then(function (result) {
+      return window.desktopAPI.saveOutputFile(item.outputPath, filename, item.sourceDir).then(function (result) {
         if (!result.saved) {
           var err = new Error("declined");
           err.code = "declined";
@@ -2460,18 +2460,23 @@
         return { status: "saved", path: result.path };
       });
     }
-    return saveFile(filename, item.outputBlob);
+    return saveFile(filename, item.outputBlob, item.sourceDir);
   }
 
   // Opens the folder a file just landed in, with that file selected. Saving
   // several files in a row into the same folder would otherwise pile up
   // Explorer windows, so a repeat of the same folder is skipped while the
   // one just opened is still on screen.
+  function dirNameOf(fullPath) {
+    var p = String(fullPath || "");
+    return p.indexOf("\\") === -1 && p.indexOf("/") === -1 ? "" : p.replace(/[\\/][^\\/]*$/, "");
+  }
+
   var lastRevealedFolder = "";
   var lastRevealAt = 0;
   function revealSaved(savedPath) {
     if (!savedPath || !window.desktopAPI || !window.desktopAPI.revealInFolder) return;
-    var folder = String(savedPath).replace(/[\\/][^\\/]*$/, "");
+    var folder = dirNameOf(savedPath);
     var now = Date.now();
     if (folder === lastRevealedFolder && now - lastRevealAt < 3000) return;
     lastRevealedFolder = folder;
@@ -3109,6 +3114,10 @@
         file: file,
         name: file.name,
         kind: kind,
+        // Where the file came from — the result is saved back beside it by
+        // default. Empty for anything not read off disk, which falls back
+        // to asking for a folder.
+        sourceDir: dirNameOf(window.desktopAPI ? window.desktopAPI.getFilePath(file) : ""),
         originalSize: file.size,
         width: 0,
         height: 0,
@@ -3917,17 +3926,24 @@
     var doneItems = items.filter(function (it) { return it.status === "done"; });
     if (!doneItems.length) return;
 
-    // One folder picked up front (or the remembered default, if that's on),
-    // then every file lands there with no further per-file prompts.
-    var targetFolder = (useDefaultFolderToggle.checked && defaultSaveFolder) ? defaultSaveFolder : null;
-    if (!targetFolder) {
+    // By default every result goes back beside its own original, so a batch
+    // from several folders lands where each file came from instead of being
+    // collected into one place. An explicitly chosen default folder overrides
+    // that for everything.
+    var explicitFolder = (useDefaultFolderToggle.checked && defaultSaveFolder) ? defaultSaveFolder : null;
+    var fallbackFolder = null;
+    if (!explicitFolder && doneItems.some(function (it) { return !it.sourceDir; })) {
+      // Only for files with no folder of their own to go back to.
       var folderResult = await window.desktopAPI.chooseFolder();
       if (!folderResult.chosen) return;
-      targetFolder = folderResult.folderPath;
+      fallbackFolder = folderResult.folderPath;
     }
 
     downloadAllBtn.disabled = true;
-    var usedNames = {};
+    // Name collisions are tracked per destination folder now that files can
+    // land in different ones — two "photo.jpg" from separate folders don't
+    // need a "(2)" between them.
+    var usedByFolder = {};
     var failed = 0;
     var firstError = "";
     var lastSavedPath = "";
@@ -3953,7 +3969,9 @@
       }
       var item = doneItems[i];
       downloadAllBtn.textContent = "Сохранение " + (i + 1) + " из " + doneItems.length + "…";
-      var filename = outputFileName(item, usedNames);
+      var targetFolder = explicitFolder || item.sourceDir || fallbackFolder;
+      if (!usedByFolder[targetFolder]) usedByFolder[targetFolder] = {};
+      var filename = outputFileName(item, usedByFolder[targetFolder]);
 
       var savePromise = item.outputPath
         ? window.desktopAPI.saveToFolder({ folderPath: targetFolder, filename: filename, outputPath: item.outputPath })
@@ -4677,8 +4695,12 @@
   // ---- Default save folder ----
   var defaultSaveFolder = localStorage.getItem("defaultSaveFolder") || null;
   function updateDefaultFolderUI() {
+    var toFixedFolder = useDefaultFolderToggle.checked && defaultSaveFolder;
     chooseDefaultFolderBtn.style.display = useDefaultFolderToggle.checked ? "" : "none";
-    defaultFolderPathEl.textContent = (useDefaultFolderToggle.checked && defaultSaveFolder) ? defaultSaveFolder : "";
+    defaultFolderPathEl.textContent = toFixedFolder ? defaultSaveFolder : "";
+    downloadAllBtn.title = toFixedFolder
+      ? "Все файлы — в выбранную папку"
+      : "Каждый файл — рядом со своим оригиналом";
   }
   useDefaultFolderToggle.checked = localStorage.getItem("useDefaultFolder") === "true" && !!defaultSaveFolder;
   updateDefaultFolderUI();

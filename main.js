@@ -652,10 +652,19 @@ function savePathWithExt(filePath, defaultFilename) {
   return ext ? filePath + ext : filePath;
 }
 
+// The dialog opens in the folder the original file came from, with the name
+// already filled in — without a directory in defaultPath Windows falls back
+// to whatever folder was last used, which is rarely the one wanted.
+function dialogDefaultPath(payload) {
+  return payload.defaultDir
+    ? path.join(payload.defaultDir, payload.defaultFilename)
+    : payload.defaultFilename;
+}
+
 ipcMain.handle("save-file", async function (event, payload) {
   var win = BrowserWindow.fromWebContents(event.sender);
   var result = await dialog.showSaveDialog(win, {
-    defaultPath: payload.defaultFilename,
+    defaultPath: dialogDefaultPath(payload),
     filters: saveDialogFilters(payload.defaultFilename)
   });
   if (result.canceled || !result.filePath) return { saved: false };
@@ -667,7 +676,7 @@ ipcMain.handle("save-file", async function (event, payload) {
 ipcMain.handle("save-output-file", async function (event, payload) {
   var win = BrowserWindow.fromWebContents(event.sender);
   var result = await dialog.showSaveDialog(win, {
-    defaultPath: payload.defaultFilename,
+    defaultPath: dialogDefaultPath(payload),
     filters: saveDialogFilters(payload.defaultFilename)
   });
   if (result.canceled || !result.filePath) return { saved: false };

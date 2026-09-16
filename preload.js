@@ -16,11 +16,11 @@ contextBridge.exposeInMainWorld("desktopAPI", {
   onJobProgress: function (callback) {
     ipcRenderer.on("job-progress", function (event, data) { callback(data); });
   },
-  saveFile: function (buffer, defaultFilename) {
-    return ipcRenderer.invoke("save-file", { buffer: buffer, defaultFilename: defaultFilename });
+  saveFile: function (buffer, defaultFilename, defaultDir) {
+    return ipcRenderer.invoke("save-file", { buffer: buffer, defaultFilename: defaultFilename, defaultDir: defaultDir });
   },
-  saveOutputFile: function (outputPath, defaultFilename) {
-    return ipcRenderer.invoke("save-output-file", { outputPath: outputPath, defaultFilename: defaultFilename });
+  saveOutputFile: function (outputPath, defaultFilename, defaultDir) {
+    return ipcRenderer.invoke("save-output-file", { outputPath: outputPath, defaultFilename: defaultFilename, defaultDir: defaultDir });
   },
   chooseFolder: function () {
     return ipcRenderer.invoke("choose-folder");

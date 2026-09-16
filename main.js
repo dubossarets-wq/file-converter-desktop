@@ -1,4 +1,4 @@
-const { app, BrowserWindow, ipcMain, dialog } = require("electron");
+const { app, BrowserWindow, ipcMain, dialog, shell } = require("electron");
 const path = require("path");
 const fs = require("fs");
 const os = require("os");
@@ -679,6 +679,15 @@ ipcMain.handle("save-output-file", async function (event, payload) {
   // made every repeat save fail with ENOENT. before-quit wipes the dir.
   await fs.promises.copyFile(payload.outputPath, filePath);
   return { saved: true, path: filePath };
+});
+
+// Opens the containing folder with the file itself selected, so it's clear
+// which one was just written. The renderer decides when to call this — a
+// batch save has to reveal once at the end, not once per file.
+ipcMain.handle("reveal-in-folder", async function (event, payload) {
+  if (!payload.path || !fs.existsSync(payload.path)) return { revealed: false };
+  shell.showItemInFolder(payload.path);
+  return { revealed: true };
 });
 
 ipcMain.handle("choose-folder", async function (event) {

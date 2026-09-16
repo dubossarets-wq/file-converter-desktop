@@ -2421,7 +2421,7 @@
           err.code = "declined";
           throw err;
         }
-        return { status: "saved" };
+        return { status: "saved", path: result.path };
       });
     }
     return new Promise(function (resolve, reject) {
@@ -2457,10 +2457,26 @@
           err.code = "declined";
           throw err;
         }
-        return { status: "saved" };
+        return { status: "saved", path: result.path };
       });
     }
     return saveFile(filename, item.outputBlob);
+  }
+
+  // Opens the folder a file just landed in, with that file selected. Saving
+  // several files in a row into the same folder would otherwise pile up
+  // Explorer windows, so a repeat of the same folder is skipped while the
+  // one just opened is still on screen.
+  var lastRevealedFolder = "";
+  var lastRevealAt = 0;
+  function revealSaved(savedPath) {
+    if (!savedPath || !window.desktopAPI || !window.desktopAPI.revealInFolder) return;
+    var folder = String(savedPath).replace(/[\\/][^\\/]*$/, "");
+    var now = Date.now();
+    if (folder === lastRevealedFolder && now - lastRevealAt < 3000) return;
+    lastRevealedFolder = folder;
+    lastRevealAt = now;
+    window.desktopAPI.revealInFolder(savedPath);
   }
 
   function saveToDefaultFolder(item, filename) {
@@ -3631,7 +3647,8 @@
           var btn = e.currentTarget;
           var original = btn.innerHTML;
           btn.disabled = true;
-          saveItemOutput(item, outputFileName(item, {})).then(function () {
+          saveItemOutput(item, outputFileName(item, {})).then(function (res) {
+            revealSaved(res && res.path);
             btn.innerHTML = ICONS.check;
             setTimeout(function () {
               btn.innerHTML = original;
@@ -3913,12 +3930,16 @@
     var usedNames = {};
     var failed = 0;
     var firstError = "";
+    var lastSavedPath = "";
     var i = 0;
 
     function finish(message) {
       downloadAllBtn.disabled = false;
       downloadAllBtn.textContent = "Сохранить все файлы";
       if (message) showToast(message);
+      // Once for the whole batch, not per file — otherwise a 20-file save
+      // would open twenty Explorer windows.
+      revealSaved(lastSavedPath);
     }
 
     function next() {
@@ -3940,7 +3961,8 @@
             return window.desktopAPI.saveToFolder({ folderPath: targetFolder, filename: filename, buffer: buffer });
           });
 
-      savePromise.then(function () {
+      savePromise.then(function (res) {
+        if (res && res.path) lastSavedPath = res.path;
         i++;
         next();
       }).catch(function (err) {
@@ -4588,7 +4610,8 @@
     var btn = compareDownloadBtn;
     var original = btn.innerHTML;
     btn.disabled = true;
-    saveFile(outputFileName(compareCurrentItem, {}), compareCurrentItem.outputBlob).then(function () {
+    saveFile(outputFileName(compareCurrentItem, {}), compareCurrentItem.outputBlob).then(function (res) {
+      revealSaved(res && res.path);
       btn.innerHTML = ICONS.check;
       setTimeout(function () { btn.innerHTML = original; btn.disabled = false; }, 1200);
     }).catch(function (err) {

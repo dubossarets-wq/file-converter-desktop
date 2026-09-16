@@ -25,6 +25,9 @@ contextBridge.exposeInMainWorld("desktopAPI", {
   chooseFolder: function () {
     return ipcRenderer.invoke("choose-folder");
   },
+  revealInFolder: function (targetPath) {
+    return ipcRenderer.invoke("reveal-in-folder", { path: targetPath });
+  },
   saveToFolder: function (payload) {
     return ipcRenderer.invoke("save-to-folder", payload);
   },

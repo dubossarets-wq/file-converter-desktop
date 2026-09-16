@@ -1,0 +1,6 @@
+node_modules/
+dist/
+
+# Bundled third-party binaries — ~360 MB total, and pandoc.exe alone (221 MB)
+# is over GitHub's 100 MB per-file hard limit. See README for where to get them.
+resources/

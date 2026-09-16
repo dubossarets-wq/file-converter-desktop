@@ -1,0 +1,4738 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Конвертер файлов</title>
+<style>
+  :root {
+    --bg: #F6F7F5;
+    --surface: #FFFFFF;
+    --surface-2: #EEF1EE;
+    --border: #DCE1DC;
+    --text: #14181A;
+    --text-dim: #5B6660;
+    --accent: #0E8C99;
+    --accent-hover: #0B7681;
+    --accent-contrast: #FFFFFF;
+    --good: #1F9D55;
+    --good-bg: #E7F6ED;
+    --bad: #D14343;
+    --bad-bg: #FBEAEA;
+    --warn-bg: #FFF6E0;
+    --warn-text: #8A5E00;
+    --shadow: 0 1px 2px rgba(20, 24, 26, 0.06), 0 8px 24px rgba(20, 24, 26, 0.06);
+    --font-display: -apple-system, "Segoe UI", "SF Pro Display", system-ui, sans-serif;
+    --font-body: -apple-system, "Segoe UI", system-ui, sans-serif;
+    --font-mono: ui-monospace, "SF Mono", "Cascadia Code", "Consolas", "Liberation Mono", monospace;
+  }
+
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #0E1315;
+      --surface: #161C1E;
+      --surface-2: #1E2528;
+      --border: #2B3336;
+      --text: #EAF0EE;
+      --text-dim: #93A19D;
+      --accent: #3FD9E5;
+      --accent-hover: #62E3EC;
+      --accent-contrast: #06282B;
+      --good: #4ADE80;
+      --good-bg: #12301F;
+      --bad: #F87171;
+      --bad-bg: #351A1A;
+      --warn-bg: #332A0F;
+      --warn-text: #F2C94C;
+      --shadow: 0 1px 2px rgba(0, 0, 0, 0.3), 0 8px 24px rgba(0, 0, 0, 0.35);
+    }
+  }
+
+  :root[data-theme="dark"] {
+    --bg: #0E1315;
+    --surface: #161C1E;
+    --surface-2: #1E2528;
+    --border: #2B3336;
+    --text: #EAF0EE;
+    --text-dim: #93A19D;
+    --accent: #3FD9E5;
+    --accent-hover: #62E3EC;
+    --accent-contrast: #06282B;
+    --good: #4ADE80;
+    --good-bg: #12301F;
+    --bad: #F87171;
+    --bad-bg: #351A1A;
+    --warn-bg: #332A0F;
+    --warn-text: #F2C94C;
+    --shadow: 0 1px 2px rgba(0, 0, 0, 0.3), 0 8px 24px rgba(0, 0, 0, 0.35);
+  }
+
+  :root[data-theme="light"] {
+    --bg: #F6F7F5;
+    --surface: #FFFFFF;
+    --surface-2: #EEF1EE;
+    --border: #DCE1DC;
+    --text: #14181A;
+    --text-dim: #5B6660;
+    --accent: #0E8C99;
+    --accent-hover: #0B7681;
+    --accent-contrast: #FFFFFF;
+    --good: #1F9D55;
+    --good-bg: #E7F6ED;
+    --bad: #D14343;
+    --bad-bg: #FBEAEA;
+    --warn-bg: #FFF6E0;
+    --warn-text: #8A5E00;
+    --shadow: 0 1px 2px rgba(20, 24, 26, 0.06), 0 8px 24px rgba(20, 24, 26, 0.06);
+  }
+
+  * { box-sizing: border-box; }
+
+  /* Custom scrollbar, applied to every scrollable element on the page */
+  * {
+    scrollbar-width: thin;
+    scrollbar-color: darkgrey transparent;
+  }
+  *::-webkit-scrollbar {
+    width: 8px;
+  }
+  *::-webkit-scrollbar-track {
+    background: transparent;
+  }
+  *::-webkit-scrollbar-thumb {
+    background-color: darkgrey;
+    border-radius: 4px;
+  }
+
+  /* Grid + align-content (not flex + justify-content) is what makes this
+     work both ways: centers the screen vertically when it's shorter than
+     the viewport, but — unlike flexbox centering — still lets it scroll
+     to the true top once it grows taller instead of clipping it off. */
+  body {
+    margin: 0;
+    background: var(--bg);
+    color: var(--text);
+    font-family: var(--font-body);
+    line-height: 1.45;
+    min-height: 100vh;
+    display: grid;
+    align-content: center;
+  }
+
+  .wrap {
+    display: none;
+    max-width: 980px;
+    margin: 0 auto;
+    padding: 40px 20px 120px;
+  }
+
+  header.page-head {
+    margin-bottom: 28px;
+  }
+  header.page-head-row {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 16px;
+    flex-wrap: wrap;
+  }
+
+  h1 {
+    font-family: var(--font-display);
+    font-weight: 700;
+    font-size: 32px;
+    letter-spacing: -0.02em;
+    margin: 0 0 6px;
+    text-wrap: balance;
+  }
+
+  .subtitle {
+    color: var(--text-dim);
+    font-size: 15px;
+    margin: 0;
+  }
+
+  .privacy-note {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    margin-top: 10px;
+    font-size: 13px;
+    color: var(--text-dim);
+  }
+
+  .privacy-dot {
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    background: var(--good);
+    flex: none;
+  }
+
+  .banner {
+    display: none;
+    background: var(--warn-bg);
+    color: var(--warn-text);
+    border-radius: 10px;
+    padding: 10px 14px;
+    font-size: 13px;
+    margin-bottom: 18px;
+  }
+  .banner.visible { display: block; }
+
+  .dropzone {
+    border: 1.5px dashed var(--border);
+    border-radius: 14px;
+    background: var(--surface);
+    padding: 36px 20px;
+    text-align: center;
+    cursor: pointer;
+    transition: border-color .15s ease, background .15s ease;
+  }
+  .dropzone:hover, .dropzone.drag-over {
+    border-color: var(--accent);
+    background: var(--surface-2);
+  }
+  .dropzone:focus-visible {
+    outline: 2px solid var(--accent);
+    outline-offset: 3px;
+  }
+  .dropzone .dz-title {
+    font-family: var(--font-display);
+    font-weight: 600;
+    font-size: 17px;
+    margin-bottom: 4px;
+  }
+  .drag-overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, .45);
+    z-index: 9999;
+    pointer-events: none;
+    opacity: 0;
+    transition: opacity .12s ease;
+  }
+  .drag-overlay.visible { opacity: 1; }
+  /* Native CSS `dashed` borders don't expose dash/gap length, so the
+     border is drawn as an SVG stroke instead — that's the only way to
+     control the gap precisely. `<svg>` is a replaced element, so unlike a
+     plain div, `inset` alone doesn't stretch it to fill the gap between
+     the offsets — it needs an explicit calc()'d size or it overflows. */
+  .drag-overlay-border {
+    position: fixed;
+    top: 20px;
+    left: 20px;
+    width: calc(100vw - 40px);
+    height: calc(100vh - 40px);
+    overflow: visible;
+    pointer-events: none;
+  }
+  .drag-overlay-border rect { stroke: var(--accent); }
+
+  .dropzone .dz-sub {
+    color: var(--text-dim);
+    font-size: 13px;
+  }
+
+  #fileInput { display: none; }
+
+  .panel {
+    margin-top: 18px;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    padding: 18px 20px;
+    display: none;
+  }
+  .panel.visible { display: block; }
+
+  .panel-title {
+    font-family: var(--font-display);
+    font-weight: 600;
+    font-size: 13px;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    color: var(--text-dim);
+    margin: 0 0 14px;
+  }
+
+  .controls-grid {
+    display: grid;
+    /* Fixed column count — not auto-fit — so toggling a sub-panel open
+       (which changes a field's height, not its width) never reflows how
+       many columns there are or where fields land. */
+    grid-template-columns: repeat(3, 1fr);
+    gap: 18px 24px;
+    align-items: start;
+  }
+  @media (max-width: 820px) {
+    .controls-grid { grid-template-columns: repeat(2, 1fr); }
+  }
+  @media (max-width: 560px) {
+    .controls-grid { grid-template-columns: 1fr; }
+  }
+
+  .target-size-row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .target-size-row input[type="number"] {
+    width: 100%;
+    padding: 9px 10px;
+    border-radius: 8px;
+    border: 1px solid var(--border);
+    background: var(--surface-2);
+    color: var(--text);
+    font-family: var(--font-mono);
+    font-variant-numeric: tabular-nums;
+    font-size: 14px;
+  }
+  .target-size-row input[type="number"]:focus-visible {
+    outline: 2px solid var(--accent);
+    outline-offset: 1px;
+  }
+  .target-size-unit {
+    color: var(--text-dim);
+    font-size: 13px;
+    flex: none;
+  }
+
+  .dim-row {
+    display: flex;
+    gap: 10px;
+  }
+  .dim-field { flex: 1; min-width: 0; }
+  .dim-field input[type="number"] {
+    width: 100%;
+    padding: 9px 10px;
+    border-radius: 8px;
+    border: 1px solid var(--border);
+    background: var(--surface-2);
+    color: var(--text);
+    font-family: var(--font-mono);
+    font-variant-numeric: tabular-nums;
+    font-size: 14px;
+  }
+  .dim-field input[type="number"]:focus-visible {
+    outline: 2px solid var(--accent);
+    outline-offset: 1px;
+  }
+
+  .panel-hint {
+    display: none;
+    margin: 14px 0 0;
+    font-size: 12px;
+    line-height: 1.5;
+    color: var(--text-dim);
+  }
+  .panel-hint.visible { display: block; }
+
+  .field-note {
+    margin: 6px 0 0;
+    font-size: 11px;
+    line-height: 1.4;
+    color: var(--text-dim);
+  }
+  .compare-sidebar .field-note { color: var(--cmp-text-dim); }
+
+  .row-label-group {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+  }
+
+  .tip {
+    position: relative;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 15px;
+    height: 15px;
+    border-radius: 50%;
+    background: var(--surface-2);
+    color: var(--text-dim);
+    font-size: 10px;
+    font-weight: 700;
+    font-family: var(--font-body);
+    cursor: help;
+    flex: none;
+    vertical-align: middle;
+    /* Stays hoverable even inside a dimmed/disabled sub-panel (those use
+       pointer-events:none on the container) — the hint should still be
+       readable while the control itself is inactive. */
+    pointer-events: auto;
+    opacity: 1;
+  }
+  .tip::before { content: "?"; }
+  .tip:focus-visible {
+    outline: 2px solid var(--accent);
+    outline-offset: 2px;
+  }
+  .compare-sidebar .tip {
+    background: rgba(255, 255, 255, 0.12);
+    color: var(--cmp-text-dim);
+  }
+
+  /* Single floating hint, positioned in JS and rendered fixed to the
+     viewport — escapes the sidebar's own scroll/overflow clipping and
+     always paints above everything else. Dark, on-brand styling in both
+     the light batch panel and the dark editor, for one consistent look. */
+  .hint-tip {
+    position: fixed;
+    z-index: 1000;
+    max-width: 240px;
+    background: #1D2124;
+    color: #F2F4F5;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 10px;
+    padding: 9px 12px;
+    font-family: var(--font-body);
+    font-size: 12px;
+    font-weight: 400;
+    line-height: 1.45;
+    text-align: left;
+    box-shadow: 0 12px 32px rgba(0, 0, 0, 0.4);
+    opacity: 0;
+    pointer-events: none;
+    transform: translateY(4px);
+    transition: opacity .12s ease, transform .12s ease;
+  }
+  .hint-tip.visible {
+    opacity: 1;
+    transform: translateY(0);
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .hint-tip { transition: none; }
+  }
+
+  .field label {
+    display: block;
+    font-size: 13px;
+    font-weight: 600;
+    margin-bottom: 6px;
+  }
+  .field .field-value {
+    font-family: var(--font-mono);
+    font-variant-numeric: tabular-nums;
+    color: var(--accent);
+    font-weight: 600;
+  }
+
+  /* input[type="number"].field-value-input (not just .field-value-input)
+     so this beats the generic `select, input[type="number"]` box styling
+     below by specificity — otherwise that rule wins and the field renders
+     as a full-width boxed input instead of a small inline value. */
+  input[type="number"].field-value-input {
+    display: inline-block;
+    font-family: var(--font-mono);
+    font-variant-numeric: tabular-nums;
+    color: var(--accent);
+    font-weight: 600;
+    font-size: inherit;
+    background: transparent;
+    border: none;
+    border-bottom: 1px dashed var(--accent);
+    border-radius: 0;
+    width: 2.6em;
+    padding: 0 1px;
+    text-align: right;
+  }
+  input[type="number"].field-value-input:focus-visible {
+    outline: 2px solid var(--accent);
+    outline-offset: 1px;
+    border-bottom-style: solid;
+  }
+  input[type="number"].field-value-input::-webkit-inner-spin-button,
+  input[type="number"].field-value-input::-webkit-outer-spin-button {
+    -webkit-appearance: none;
+    margin: 0;
+  }
+  input[type="number"].field-value-input { -moz-appearance: textfield; }
+
+  select, input[type="number"], input[type="text"] {
+    width: 100%;
+    padding: 9px 10px;
+    border-radius: 8px;
+    border: 1px solid var(--border);
+    background: var(--surface-2);
+    color: var(--text);
+    font-family: var(--font-body);
+    font-size: 14px;
+  }
+  .suffix-input { width: 120px; }
+  select:focus-visible, input:focus-visible {
+    outline: 2px solid var(--accent);
+    outline-offset: 1px;
+  }
+
+  input[type="range"] {
+    width: 100%;
+    accent-color: var(--accent);
+  }
+
+  .toggle-row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 6px;
+  }
+  .app-settings-row {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 14px;
+    margin: 18px 0;
+    padding: 12px 16px;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+  }
+  .app-settings-row .toggle-row { margin-bottom: 0; }
+  .app-setting-path {
+    font-size: 13px;
+    color: var(--text-dim);
+    font-family: var(--font-mono);
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    max-width: 320px;
+  }
+  .switch {
+    position: relative;
+    display: inline-block;
+    width: 38px;
+    height: 22px;
+    flex: none;
+    cursor: pointer;
+  }
+  .switch input { opacity: 0; width: 0; height: 0; }
+  .switch .track {
+    position: absolute;
+    inset: 0;
+    background: var(--border);
+    border-radius: 999px;
+    transition: background .15s ease;
+  }
+  .switch .thumb {
+    position: absolute;
+    top: 2px; left: 2px;
+    width: 18px; height: 18px;
+    background: var(--surface);
+    border-radius: 50%;
+    transition: transform .15s ease;
+    box-shadow: 0 1px 2px rgba(0,0,0,.3);
+  }
+  .switch input:checked + .track { background: var(--accent); }
+  .switch input:checked + .track + .thumb { transform: translateX(16px); }
+  .switch input:focus-visible + .track { outline: 2px solid var(--accent); outline-offset: 2px; }
+
+  /* Dimming is applied per-control (not via opacity on the whole block) so
+     the .tip hint inside a disabled sub-panel's label stays fully legible —
+     opacity on an ancestor can't be undone by a descendant in CSS. */
+  .resize-sub { pointer-events: none; }
+  .resize-sub label { color: var(--text-dim); transition: color .15s ease; }
+  .resize-sub select,
+  .resize-sub input[type="range"],
+  .resize-sub input[type="number"],
+  .resize-sub .switch { opacity: .4; transition: opacity .15s ease; }
+  .resize-sub .field-value { color: var(--text-dim); transition: color .15s ease; }
+  .resize-sub.enabled { pointer-events: auto; }
+  .resize-sub.enabled label { color: var(--text); }
+  .resize-sub.enabled select,
+  .resize-sub.enabled input[type="range"],
+  .resize-sub.enabled input[type="number"],
+  .resize-sub.enabled .switch { opacity: 1; }
+  .resize-sub.enabled .field-value { color: var(--accent); }
+  .resize-sub .tip { opacity: 1; }
+
+  .apply-row {
+    margin-top: 16px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 10px;
+  }
+
+  .concurrency-picker {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 14px;
+    color: var(--text-dim);
+  }
+  .concurrency-select {
+    width: auto;
+    padding: 7px 8px;
+  }
+
+  button {
+    font-family: var(--font-body);
+    cursor: pointer;
+  }
+
+  .btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    border: none;
+    border-radius: 9px;
+    padding: 10px 18px;
+    font-size: 14px;
+    font-weight: 600;
+    background: var(--accent);
+    color: var(--accent-contrast);
+    text-decoration: none;
+    cursor: pointer;
+    transition: background .15s ease, transform .1s ease;
+  }
+  .btn:hover { background: var(--accent-hover); }
+  .btn:active { transform: scale(0.98); }
+  .btn:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+  .btn:disabled { opacity: .5; cursor: not-allowed; }
+
+  .btn-ghost {
+    background: transparent;
+    border: 1px solid var(--border);
+    color: var(--text);
+  }
+  .btn-ghost:hover { background: var(--surface-2); }
+
+  .table-section {
+    margin-top: 22px;
+    display: none;
+  }
+  .table-section.visible { display: block; }
+
+  .table-wrap {
+    overflow-x: auto;
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    background: var(--surface);
+  }
+
+  table.file-table {
+    width: 100%;
+    border-collapse: collapse;
+    min-width: 640px;
+  }
+
+  .file-table thead th {
+    text-align: left;
+    font-size: 12px;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: var(--text-dim);
+    font-weight: 600;
+    padding: 12px 14px;
+    border-bottom: 1px solid var(--border);
+    white-space: nowrap;
+  }
+  .file-table thead th.num { text-align: right; }
+
+  .file-table tbody td {
+    padding: 10px 14px;
+    border-bottom: 1px solid var(--border);
+    vertical-align: middle;
+    font-size: 14px;
+  }
+  .file-table tbody tr:last-child td { border-bottom: none; }
+  .file-table tbody tr:hover { background: var(--surface-2); }
+
+  td.num {
+    text-align: right;
+    font-family: var(--font-mono);
+    font-variant-numeric: tabular-nums;
+    white-space: nowrap;
+  }
+  td.arrow {
+    text-align: center;
+    color: var(--text-dim);
+    width: 24px;
+  }
+
+  .cell-file {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    min-width: 220px;
+  }
+  .thumb {
+    width: 40px;
+    height: 40px;
+    border-radius: 6px;
+    object-fit: cover;
+    background: var(--surface-2);
+    flex: none;
+    border: 1px solid var(--border);
+  }
+  /* Placeholder while the thumbnail hasn't been generated yet — a plain
+     neutral icon instead of the browser's default broken-image glyph
+     (which is what you get from an <img> with no usable src). */
+  .thumb.thumb-empty {
+    background-color: transparent;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%239aa3a0' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Crect width='18' height='18' x='3' y='3' rx='2' ry='2'%3E%3C/rect%3E%3Ccircle cx='9' cy='9' r='2'%3E%3C/circle%3E%3Cpath d='m21 15-3.086-3.086a2 2 0 0 0-2.828 0L6 21'%3E%3C/path%3E%3C/svg%3E");
+    /* The icon draws its own frame, and the placeholder's own fill/border
+       were both lighter than the row background — together they read as a
+       visible box around the glyph, so both are dropped entirely here. */
+    border-color: transparent;
+    background-repeat: no-repeat;
+    background-position: center;
+    background-size: 18px 18px;
+  }
+  .thumb.thumb-video {
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%239aa3a0' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m16 13 5.223 3.482a.5.5 0 0 0 .777-.416V7.87a.5.5 0 0 0-.752-.432L16 10.5'%3E%3C/path%3E%3Crect x='2' y='6' width='14' height='12' rx='2'%3E%3C/rect%3E%3C/svg%3E");
+  }
+  .thumb.thumb-audio {
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%239aa3a0' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M9 18V5l12-2v13'%3E%3C/path%3E%3Ccircle cx='6' cy='18' r='3'%3E%3C/circle%3E%3Ccircle cx='18' cy='16' r='3'%3E%3C/circle%3E%3C/svg%3E");
+  }
+  .thumb.thumb-document {
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%239aa3a0' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M6 22a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h8a2.4 2.4 0 0 1 1.704.706l3.588 3.588A2.4 2.4 0 0 1 20 8v12a2 2 0 0 1-2 2z'%3E%3C/path%3E%3Cpath d='M14 2v5a1 1 0 0 0 1 1h5'%3E%3C/path%3E%3Cpath d='M10 9H8'%3E%3C/path%3E%3Cpath d='M16 13H8'%3E%3C/path%3E%3Cpath d='M16 17H8'%3E%3C/path%3E%3C/svg%3E");
+  }
+  .fname { min-width: 0; }
+  .fname .name {
+    display: block;
+    font-weight: 500;
+    max-width: 240px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+  .fname .dims {
+    display: block;
+    font-size: 12px;
+    color: var(--text-dim);
+    font-family: var(--font-mono);
+    font-variant-numeric: tabular-nums;
+  }
+
+  .chip {
+    display: inline-flex;
+    align-items: center;
+    padding: 3px 9px;
+    border-radius: 999px;
+    font-size: 12px;
+    font-weight: 700;
+    font-family: var(--font-mono);
+    font-variant-numeric: tabular-nums;
+  }
+  .chip.good { background: var(--good-bg); color: var(--good); }
+  .chip.bad { background: var(--bad-bg); color: var(--bad); }
+  .chip.pending { background: var(--surface-2); color: var(--text-dim); }
+
+  .mini-progress-wrap { min-width: 110px; }
+  .mini-progress {
+    width: 100%;
+    height: 6px;
+    border-radius: 999px;
+    background: var(--surface-2);
+    overflow: hidden;
+    margin-bottom: 4px;
+  }
+  .mini-progress-fill {
+    height: 100%;
+    background: var(--accent);
+    border-radius: 999px;
+    transition: width .3s ease;
+  }
+  .mini-progress-label {
+    font-size: 11px;
+    color: var(--text-dim);
+    font-family: var(--font-mono);
+    font-variant-numeric: tabular-nums;
+    white-space: nowrap;
+  }
+
+  .row-actions {
+    display: flex;
+    gap: 6px;
+    justify-content: flex-end;
+  }
+  .icon-btn {
+    border: 1px solid var(--border);
+    background: var(--surface);
+    color: var(--text);
+    width: 30px;
+    height: 30px;
+    border-radius: 7px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 14px;
+    text-decoration: none;
+    cursor: pointer;
+  }
+  .icon-btn svg { width: 16px; height: 16px; }
+  .icon-btn:hover { background: var(--surface-2); }
+  .icon-btn:focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; }
+  .icon-btn.danger:hover { border-color: var(--bad); color: var(--bad); }
+  .icon-btn:disabled { opacity: .4; cursor: not-allowed; }
+
+  .toast {
+    position: fixed;
+    left: 50%;
+    bottom: 24px;
+    transform: translateX(-50%) translateY(12px);
+    background: var(--text);
+    color: var(--bg);
+    padding: 10px 18px;
+    border-radius: 999px;
+    font-size: 13px;
+    font-weight: 600;
+    box-shadow: var(--shadow);
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity .2s ease, transform .2s ease;
+    z-index: 50;
+    max-width: 90vw;
+    text-align: center;
+  }
+  .toast.visible {
+    opacity: 1;
+    transform: translateX(-50%) translateY(0);
+  }
+
+  .summary-bar {
+    position: sticky;
+    bottom: 16px;
+    margin-top: 18px;
+    display: none;
+    align-items: center;
+    justify-content: space-between;
+    gap: 16px;
+    flex-wrap: wrap;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    padding: 14px 20px;
+    box-shadow: var(--shadow), 0 0 40px 25px var(--bg);
+  }
+  .summary-bar.visible { display: flex; }
+
+  .summary-stats {
+    display: flex;
+    gap: 22px;
+    flex-wrap: wrap;
+    font-size: 13px;
+  }
+  .summary-stats .stat-label {
+    color: var(--text-dim);
+    display: block;
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+  }
+  .summary-stats .stat-value {
+    font-family: var(--font-mono);
+    font-variant-numeric: tabular-nums;
+    font-weight: 700;
+    font-size: 16px;
+  }
+  .summary-stats .stat-value.good { color: var(--good); }
+
+  @media (prefers-reduced-motion: reduce) {
+    * { transition: none !important; }
+  }
+
+  @media (max-width: 560px) {
+    .fname .name { max-width: 140px; }
+    h1 { font-size: 26px; }
+  }
+
+  /* ---- Before/after compare viewer ---- */
+  .compare-modal {
+    --cmp-bg: #131517;
+    --cmp-sidebar-bg: #1B1E21;
+    --cmp-border: #2C3033;
+    --cmp-text: #F2F4F5;
+    --cmp-text-dim: #9AA3A8;
+    --cmp-pink: #EE3F73;
+    --cmp-pink-hover: #D6285C;
+    position: fixed;
+    inset: 0;
+    background: var(--cmp-bg);
+    color: var(--cmp-text);
+    z-index: 100;
+    display: none;
+    grid-template-columns: 1fr 280px;
+    grid-template-rows: 1fr;
+    font-size: 14px;
+  }
+  .compare-modal.open { display: grid; }
+
+  /* Embedded = the tool's main screen (not an overlay). Falls back to a
+     single column until a photo is loaded, since there's no sidebar yet.
+     A fixed height (not min-height) keeps the grid row a fixed size, so
+     tall sidebar content scrolls internally via .compare-sidebar's own
+     overflow-y instead of growing the whole page. */
+  .compare-modal.embedded {
+    position: relative;
+    inset: auto;
+    display: grid;
+    height: 100vh;
+  }
+  .compare-modal.embedded:not(.has-item) { grid-template-columns: 1fr; }
+
+  .compare-close {
+    position: absolute;
+    top: 20px;
+    left: 20px;
+    width: 53px;
+    height: 53px;
+    border-radius: 50%;
+    border: none;
+    background: var(--cmp-pink);
+    color: #fff;
+    font-size: 21px;
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.5);
+    z-index: 5;
+  }
+  .compare-close svg { width: 22px; height: 22px; }
+  .compare-close:hover { background: var(--cmp-pink-hover); }
+  .compare-close:focus-visible { outline: 2px solid #fff; outline-offset: 2px; }
+  .compare-modal.embedded:not(.has-item) .compare-close { display: none; }
+
+  .compare-switch-btn {
+    display: none;
+    position: absolute;
+    top: 20px;
+    right: 20px;
+    z-index: 5;
+    border: 1px solid var(--cmp-border);
+    background: var(--cmp-sidebar-bg);
+    color: var(--cmp-text);
+    padding: 13px 20px;
+    border-radius: 999px;
+    font-size: 16px;
+    font-weight: 600;
+    cursor: pointer;
+  }
+  .compare-switch-btn:hover { background: rgba(255, 255, 255, 0.08); }
+  .compare-switch-btn:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+  .compare-modal.embedded .compare-switch-btn { display: inline-flex; }
+  .compare-modal.embedded.has-item .compare-switch-btn { right: 300px; }
+
+  .compare-name {
+    position: absolute;
+    top: 30px;
+    left: 88px;
+    right: 300px;
+    font-size: 16px;
+    font-weight: 600;
+    color: var(--cmp-text-dim);
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+  .compare-modal.embedded:not(.has-item) .compare-name { display: none; }
+
+  .compare-empty {
+    display: none;
+    grid-column: 1 / -1;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    text-align: center;
+    cursor: pointer;
+    padding: 40px;
+  }
+  .compare-modal.embedded:not(.has-item) .compare-empty { display: flex; }
+  .compare-empty-icon {
+    width: 64px;
+    height: 64px;
+    border-radius: 50%;
+    background: rgba(255, 255, 255, 0.06);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 26px;
+    color: var(--accent);
+    margin-bottom: 8px;
+    transition: background .15s ease, color .15s ease;
+  }
+  .compare-empty-icon svg { width: 28px; height: 28px; }
+  .compare-empty:hover .compare-empty-icon,
+  .compare-empty.drag-over .compare-empty-icon {
+    background: var(--accent);
+    color: var(--accent-contrast);
+  }
+  .compare-empty-title {
+    font-family: var(--font-display);
+    font-weight: 700;
+    font-size: 20px;
+  }
+  .compare-empty-sub { color: var(--cmp-text-dim); font-size: 13px; }
+
+  .compare-main {
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    min-width: 0;
+    min-height: 0;
+  }
+
+  .compare-viewport {
+    position: relative;
+    flex: 1;
+    min-height: 0;
+    overflow: hidden;
+    padding: 70px 24px 64px;
+    touch-action: none;
+    cursor: grab;
+  }
+  .compare-viewport.near-handle { cursor: ew-resize; }
+  .compare-viewport.panning { cursor: grabbing; }
+
+  .compare-frame {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    border-radius: 4px;
+    overflow: hidden;
+    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.55);
+    background-image:
+      linear-gradient(45deg, #2a2f31 25%, transparent 25%),
+      linear-gradient(-45deg, #2a2f31 25%, transparent 25%),
+      linear-gradient(45deg, transparent 75%, #2a2f31 75%),
+      linear-gradient(-45deg, transparent 75%, #2a2f31 75%);
+    background-size: 20px 20px;
+    background-position: 0 0, 0 10px, 10px -10px, -10px 0px;
+    background-color: #1a1d1e;
+  }
+
+  .compare-img {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
+    user-select: none;
+    pointer-events: none;
+    -webkit-user-drag: none;
+  }
+  .compare-after {
+    clip-path: inset(0 0 0 50%);
+    will-change: clip-path;
+    /* "После" почти всегда имеет чуть другие пропорции из-за округления
+       пикселей при ресайзе. object-fit:contain вписывал бы его в рамку
+       независимо от "До" (рамка подогнана под пропорции "До"), из-за чего
+       две картинки съезжали на доли пикселя друг относительно друга —
+       на регулярных текстурах (кирпич, плитка) это давало заметное
+       размытие/двоение прямо у линии сравнения. fill растягивает "После"
+       ровно под ту же рамку, что и "До" — граница остаётся идеально чёткой. */
+    object-fit: fill;
+  }
+
+  .compare-handle {
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    left: 50%;
+    width: 0;
+    pointer-events: none;
+  }
+  .compare-handle-line {
+    position: absolute;
+    top: 0; bottom: 0; left: -1px;
+    width: 2px;
+    background: #fff;
+    box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.3);
+  }
+  .compare-handle-grip {
+    position: absolute;
+    top: 50%; left: 50%;
+    transform: translate(-50%, -50%);
+    width: 48px; height: 48px;
+    border-radius: 50%;
+    background: #fff;
+    color: #14181A;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 19px;
+    box-shadow: 0 2px 12px rgba(0, 0, 0, 0.45);
+  }
+  .compare-handle-grip svg { width: 20px; height: 20px; }
+
+  .compare-label {
+    position: absolute;
+    top: 82px;
+    padding: 5px 13px;
+    border-radius: 999px;
+    background: rgba(0, 0, 0, 0.55);
+    color: #fff;
+    font-size: 15px;
+    font-weight: 600;
+    letter-spacing: 0.02em;
+    pointer-events: none;
+    white-space: nowrap;
+  }
+  .compare-label-before { left: 12px; }
+  .compare-label-after { right: 12px; }
+
+  .compare-zoom {
+    position: absolute;
+    bottom: 16px;
+    left: 50%;
+    transform: translateX(-50%);
+    display: flex;
+    align-items: center;
+    gap: 13px;
+    background: var(--cmp-sidebar-bg);
+    border: 1px solid var(--cmp-border);
+    border-radius: 999px;
+    padding: 8px 10px;
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.4);
+  }
+  .compare-zoom-btn {
+    width: 33px;
+    height: 33px;
+    border-radius: 50%;
+    border: none;
+    background: transparent;
+    color: var(--cmp-text);
+    font-size: 20px;
+    line-height: 1;
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+  }
+  .compare-zoom-btn:hover { background: rgba(255, 255, 255, 0.1); }
+  .compare-zoom-btn:focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; }
+  .compare-zoom-value {
+    min-width: 53px;
+    border: none;
+    background: transparent;
+    border-radius: 999px;
+    padding: 5px 8px;
+    text-align: center;
+    font-family: var(--font-mono);
+    font-variant-numeric: tabular-nums;
+    color: var(--cmp-text-dim);
+    font-size: 15px;
+    cursor: pointer;
+  }
+  .compare-zoom-value:hover { background: rgba(255, 255, 255, 0.1); color: var(--cmp-text); }
+  .compare-zoom-value:focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; }
+
+  .compare-panel {
+    position: absolute;
+    bottom: 16px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    background: var(--cmp-sidebar-bg);
+    border: 1px solid var(--cmp-border);
+    border-radius: 999px;
+    padding: 8px 10px 8px 18px;
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.4);
+    font-family: var(--font-mono);
+    font-variant-numeric: tabular-nums;
+    font-size: 15px;
+  }
+  .compare-panel-left { left: 16px; color: var(--cmp-text-dim); }
+  .compare-panel-right { right: 16px; }
+
+  .compare-savings-badge {
+    padding: 4px 11px;
+    border-radius: 999px;
+    font-weight: 700;
+  }
+  .compare-savings-badge.good { background: rgba(74, 222, 128, 0.18); color: #4ADE80; }
+  .compare-savings-badge.bad { background: rgba(248, 113, 113, 0.18); color: #F87171; }
+
+  .compare-download-btn {
+    width: 33px;
+    height: 33px;
+    border-radius: 50%;
+    border: none;
+    background: var(--accent);
+    color: var(--accent-contrast);
+    font-size: 16px;
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    flex: none;
+  }
+  .compare-download-btn svg { width: 18px; height: 18px; }
+  .compare-download-btn:hover { background: var(--accent-hover); }
+  .compare-download-btn:disabled { opacity: .5; cursor: not-allowed; }
+
+  .compare-sidebar {
+    background: var(--cmp-sidebar-bg);
+    border-left: 1px solid var(--cmp-border);
+    overflow-y: auto;
+    padding-bottom: 20px;
+  }
+  .compare-modal.embedded:not(.has-item) .compare-sidebar,
+  .compare-modal.embedded:not(.has-item) .compare-viewport,
+  .compare-modal.embedded:not(.has-item) .compare-zoom,
+  .compare-modal.embedded:not(.has-item) .compare-panel {
+    display: none;
+  }
+  .compare-sidebar-header {
+    padding: 14px 18px;
+    font-family: var(--font-display);
+    font-weight: 700;
+    font-size: 13px;
+    letter-spacing: 0.02em;
+  }
+  .compare-sidebar-header.title {
+    background: var(--accent);
+    color: var(--accent-contrast);
+  }
+  .compare-sidebar-header.section {
+    background: rgba(255, 255, 255, 0.04);
+    color: var(--cmp-text-dim);
+    text-transform: uppercase;
+    font-size: 11px;
+    letter-spacing: 0.06em;
+    margin-top: 4px;
+  }
+
+  .compare-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+    padding: 12px 18px;
+  }
+  .compare-row label { font-weight: 500; }
+
+  .compare-field { padding: 10px 18px; }
+  .compare-field label {
+    display: block;
+    font-size: 12px;
+    color: var(--cmp-text-dim);
+    margin-bottom: 6px;
+  }
+  .compare-field .field-value {
+    font-family: var(--font-mono);
+    font-variant-numeric: tabular-nums;
+    color: #fff;
+    font-weight: 600;
+  }
+  .compare-field select,
+  .compare-field input[type="range"] {
+    width: 100%;
+  }
+  .compare-field select {
+    padding: 8px 10px;
+    border-radius: 8px;
+    border: 1px solid var(--cmp-border);
+    background: #101214;
+    color: var(--cmp-text);
+    font-family: var(--font-body);
+    font-size: 13px;
+  }
+  .compare-field input[type="range"] { accent-color: var(--accent); }
+
+  /* Dimming is per-control (not opacity on the whole block) so the .tip
+     hint inside a disabled sub-panel's label stays fully legible. */
+  .compare-resize-sub {
+    pointer-events: none;
+    padding: 0 18px 10px;
+  }
+  .compare-resize-sub select,
+  .compare-resize-sub input[type="range"],
+  .compare-resize-sub input[type="number"],
+  .compare-resize-sub .switch { opacity: .4; transition: opacity .15s ease; }
+  .compare-resize-sub.enabled { pointer-events: auto; }
+  .compare-resize-sub.enabled select,
+  .compare-resize-sub.enabled input[type="range"],
+  .compare-resize-sub.enabled input[type="number"],
+  .compare-resize-sub.enabled .switch { opacity: 1; }
+  .compare-resize-sub .tip { opacity: 1; }
+  .compare-resize-sub label {
+    display: block;
+    font-size: 12px;
+    color: var(--cmp-text-dim);
+    margin-bottom: 6px;
+  }
+  .compare-resize-sub input[type="range"] { width: 100%; accent-color: var(--accent); }
+  .compare-resize-sub select {
+    width: 100%;
+    padding: 8px 10px;
+    border-radius: 8px;
+    border: 1px solid var(--cmp-border);
+    background: #101214;
+    color: var(--cmp-text);
+    font-family: var(--font-body);
+    font-size: 13px;
+  }
+  .compare-resize-sub .target-size-row input[type="number"] {
+    width: 100%;
+    padding: 8px 10px;
+    border-radius: 8px;
+    border: 1px solid var(--cmp-border);
+    background: #101214;
+    color: var(--cmp-text);
+    font-family: var(--font-mono);
+    font-variant-numeric: tabular-nums;
+    font-size: 13px;
+  }
+  .compare-resize-sub .target-size-unit { color: var(--cmp-text-dim); font-size: 12px; }
+  .compare-resize-sub .dim-row { display: flex; gap: 10px; }
+  .compare-resize-sub .dim-field { flex: 1; min-width: 0; }
+  .compare-resize-sub .dim-field input[type="number"] {
+    width: 100%;
+    padding: 8px 10px;
+    border-radius: 8px;
+    border: 1px solid var(--cmp-border);
+    background: #101214;
+    color: var(--cmp-text);
+    font-family: var(--font-mono);
+    font-variant-numeric: tabular-nums;
+    font-size: 13px;
+  }
+
+  .compare-sidebar-note {
+    margin: 14px 18px 0;
+    font-size: 11px;
+    line-height: 1.5;
+    color: var(--cmp-text-dim);
+    padding-top: 12px;
+    border-top: 1px solid var(--cmp-border);
+  }
+  #compareSmartHint { display: none; }
+  #compareSmartHint.visible { display: block; }
+
+  @media (max-width: 860px) {
+    .compare-modal.open,
+    .compare-modal.embedded.has-item {
+      grid-template-columns: 1fr;
+      grid-template-rows: 1fr auto;
+    }
+    .compare-sidebar { border-left: none; border-top: 1px solid var(--cmp-border); max-height: 42vh; }
+    .compare-name { right: 20px; }
+    .compare-modal.embedded.has-item .compare-switch-btn { right: 20px; }
+  }
+</style>
+</head>
+<body>
+
+<div class="wrap" id="batchScreen">
+  <header class="page-head page-head-row">
+    <div>
+      <h1>Конвертер файлов</h1>
+      <p class="subtitle">Изображения (JPEG / PNG / WebP / GIF / BMP) и видео (MOV / AVI / MKV → MP4)</p>
+      <div class="privacy-note"><span class="privacy-dot"></span>Всё обрабатывается локально на этом компьютере, никуда не отправляется</div>
+    </div>
+    <button class="btn-ghost btn" id="toSingleBtn">← Один файл</button>
+  </header>
+
+  <div class="app-settings-row">
+    <div class="toggle-row">
+      <label class="switch">
+        <input type="checkbox" id="useDefaultFolderToggle">
+        <span class="track"></span>
+        <span class="thumb"></span>
+      </label>
+      <span class="row-label-group">
+        <label for="useDefaultFolderToggle" style="margin:0;">Сохранять сразу в папку</label>
+        <span class="tip" tabindex="0" data-tip="Без диалога «Сохранить как» на каждый файл — все результаты сразу идут в выбранную папку."></span>
+      </span>
+    </div>
+    <button class="btn-ghost btn" id="chooseDefaultFolderBtn" style="display:none;">Выбрать папку</button>
+    <span class="app-setting-path" id="defaultFolderPath"></span>
+
+    <div class="toggle-row">
+      <label for="fileSuffixInput" style="margin:0;">Суффикс к имени</label>
+      <input type="text" id="fileSuffixInput" class="suffix-input" placeholder="например _sm" maxlength="40">
+      <span class="tip" tabindex="0" data-tip="Добавляется к имени файла перед расширением при сохранении, например photo_sm.webp. Пусто — без суффикса."></span>
+    </div>
+
+    <div class="toggle-row" style="margin-left:auto;">
+      <label class="switch">
+        <input type="checkbox" id="rememberSettingsToggle">
+        <span class="track"></span>
+        <span class="thumb"></span>
+      </label>
+      <span class="row-label-group">
+        <label for="rememberSettingsToggle" style="margin:0;">Запомнить настройки</label>
+        <span class="tip" tabindex="0" data-tip="Сохраняет текущие настройки конвертации и использует их при следующем запуске программы. Выключено по умолчанию."></span>
+      </span>
+    </div>
+  </div>
+
+  <div class="banner" id="webpBanner">Браузер не поддерживает WebP — переключено на JPEG.</div>
+
+  <div class="dropzone" id="dropzone" tabindex="0" role="button" aria-label="Выбрать файлы для конвертации">
+    <div class="dz-title">Загрузите ваши файлы</div>
+    <div class="dz-sub" style="max-width:400px; margin:0 auto;">или нажмите, чтобы выбрать файлы · изображения, видео, аудио, PDF, DOCX/ODT/RTF/MD/HTML</div>
+    <input type="file" id="fileInput" accept="image/*,video/*,audio/*,.mkv,.mov,.avi,.wmv,.flv,.3gp,.mp3,.wav,.flac,.aac,.ogg,.m4a,.wma,.opus,.aiff,.pdf,.docx,.odt,.rtf,.md,.html,.htm" multiple>
+  </div>
+
+  <div class="panel" id="controlsPanel">
+    <p class="panel-title">Настройки конвертации</p>
+    <div class="controls-grid">
+      <div class="field">
+        <label for="formatSelect">Формат на выходе <span class="tip" tabindex="0" data-tip="WebP — самый лёгкий при хорошем качестве. JPEG — для совместимости. PNG — без потерь, но тяжелее. AVIF — ещё эффективнее WebP (если браузерный движок поддерживает). GIF/BMP — качество/умное сжатие не действуют."></span></label>
+        <select id="formatSelect">
+          <option value="webp" selected>WebP</option>
+          <option value="jpeg">JPEG</option>
+          <option value="png">PNG</option>
+          <option value="avif">AVIF</option>
+          <option value="gif">GIF</option>
+          <option value="bmp">BMP</option>
+        </select>
+
+        <div class="resize-sub" id="qualityField" style="margin-top:16px;">
+          <label for="qualitySlider"><span id="qualityLabelPrefix">Качество</span>: <input type="number" class="field-value-input" id="qualityValue" min="1" max="100" value="80">% <span class="tip" tabindex="0" data-tip="Меньше — легче файл, но заметнее артефакты. На PNG не влияет."></span></label>
+          <input type="range" id="qualitySlider" min="1" max="100" value="80">
+        </div>
+
+        <div class="toggle-row" style="margin-top:16px;">
+          <label class="switch">
+            <input type="checkbox" id="smartToggle">
+            <span class="track"></span>
+            <span class="thumb"></span>
+          </label>
+          <span class="row-label-group">
+            <label for="smartToggle" style="margin:0;">Умное сжатие (лимит веса)</label>
+            <span class="tip" tabindex="0" data-tip="Сам подбирает лучшее качество под нужный вес файла. Не помогает — уменьшит разрешение."></span>
+          </span>
+        </div>
+        <div class="resize-sub" id="smartSub">
+          <label for="targetSizeInput">Макс. вес файла</label>
+          <div class="target-size-row">
+            <input type="number" id="targetSizeInput" min="10" max="20000" step="10" value="200">
+            <span class="target-size-unit">KB</span>
+          </div>
+          <p class="field-note" id="smartHint">Подбирает лучшее качество под лимит. Не получится уложиться — уменьшит разрешение и предупредит.</p>
+        </div>
+      </div>
+
+      <div class="field">
+        <div class="toggle-row">
+          <label class="switch">
+            <input type="checkbox" id="resizeToggle">
+            <span class="track"></span>
+            <span class="thumb"></span>
+          </label>
+          <span class="row-label-group">
+            <label for="resizeToggle" style="margin:0;">Изменить размер</label>
+            <span class="tip" tabindex="0" data-tip="Задаёт ширину и высоту в пикселях — уменьшает вес за счёт разрешения."></span>
+          </span>
+        </div>
+        <div class="resize-sub" id="resizeSub">
+          <label for="resizeMethodSelect">Метод изменения размера <span class="tip" tabindex="0" data-tip="Lanczos3 — чётче, но медленнее. Билинейный — быстрее. Ближайший сосед — без сглаживания, для пиксель-арта. Авто — самый быстрый."></span></label>
+          <select id="resizeMethodSelect">
+            <option value="auto" selected>Авто (браузер, быстрее)</option>
+            <option value="nearest">Ближайший сосед</option>
+            <option value="bilinear">Билинейный</option>
+            <option value="lanczos3">Lanczos3 (лучшее качество)</option>
+          </select>
+
+          <div class="field" style="margin-top:10px;">
+            <label for="resizeDimModeSelect">Что указывать <span class="tip" tabindex="0" data-tip="Ширина/высота — точные размеры сторон как есть. Короткая/длинная сторона — удобно для пачки фото разной ориентации: одно число всегда идёт на меньшую сторону, другое — на большую, вне зависимости от портрета/альбома."></span></label>
+            <select id="resizeDimModeSelect">
+              <option value="wh" selected>Ширина / высота</option>
+              <option value="sides">Короткая / длинная сторона</option>
+            </select>
+          </div>
+
+          <div class="dim-row" id="resizeWHRow" style="margin-top:10px;">
+            <div class="dim-field">
+              <label for="resizeWidthInput">Ширина, px</label>
+              <input type="number" id="resizeWidthInput" min="1" max="10000" value="1920">
+            </div>
+            <div class="dim-field">
+              <label for="resizeHeightInput">Высота, px</label>
+              <input type="number" id="resizeHeightInput" min="1" max="10000" value="1920">
+            </div>
+          </div>
+
+          <div class="dim-row" id="resizeSidesRow" style="margin-top:10px; display:none;">
+            <div class="dim-field">
+              <label for="resizeShortInput">Короткая сторона, px</label>
+              <input type="number" id="resizeShortInput" min="1" max="10000" value="1080">
+            </div>
+            <div class="dim-field">
+              <label for="resizeLongInput">Длинная сторона, px</label>
+              <input type="number" id="resizeLongInput" min="1" max="10000" value="1920">
+            </div>
+          </div>
+
+          <div class="toggle-row" style="margin-top:10px;">
+            <label class="switch">
+              <input type="checkbox" id="maintainAspectToggle" checked>
+              <span class="track"></span>
+              <span class="thumb"></span>
+            </label>
+            <span class="row-label-group">
+              <label for="maintainAspectToggle" style="margin:0;">Сохранить пропорции</label>
+              <span class="tip" tabindex="0" data-tip="Включено — картинка впишется в размер без искажений. Выключено — растянется точно под заданные числа."></span>
+            </span>
+          </div>
+        </div>
+      </div>
+
+      <div class="field">
+        <div class="toggle-row">
+          <label class="switch">
+            <input type="checkbox" id="paletteToggle">
+            <span class="track"></span>
+            <span class="thumb"></span>
+          </label>
+          <span class="row-label-group">
+            <label for="paletteToggle" style="margin:0;">Уменьшить палитру</label>
+            <span class="tip" tabindex="0" data-tip="Сокращает число цветов — сильно уменьшает вес PNG."></span>
+          </span>
+        </div>
+        <div class="resize-sub" id="paletteSub">
+          <label for="paletteColorsSlider">Цветов: <span class="field-value" id="paletteColorsValue">256</span> <span class="tip" tabindex="0" data-tip="Меньше цветов — легче файл, но заметнее переходы."></span></label>
+          <input type="range" id="paletteColorsSlider" min="2" max="256" step="1" value="256">
+          <div class="toggle-row" style="margin-top:10px;">
+            <label class="switch">
+              <input type="checkbox" id="ditherToggle" checked>
+              <span class="track"></span>
+              <span class="thumb"></span>
+            </label>
+            <span class="row-label-group">
+              <label for="ditherToggle" style="margin:0;">Дизеринг (Floyd–Steinberg)</label>
+              <span class="tip" tabindex="0" data-tip="Сглаживает переходы после уменьшения палитры лёгким шумом."></span>
+            </span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="apply-row">
+      <label class="concurrency-picker">
+        <span>Обрабатывать по:</span>
+        <select class="concurrency-select" id="concurrencySelect">
+          <option value="1">1</option>
+          <option value="5">5</option>
+          <option value="10" selected>10</option>
+          <option value="50">50</option>
+          <option value="all">Все</option>
+        </select>
+      </label>
+      <div style="display:flex; gap:10px;">
+        <button class="btn-ghost btn" id="cancelApplyBtn" style="display:none;">Отменить</button>
+        <button class="btn" id="applyAllBtn">Применить ко всем файлам</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="panel" id="videoControlsPanel">
+    <p class="panel-title">Настройки конвертации видео</p>
+    <div class="controls-grid">
+      <div class="field">
+        <label for="videoFormatSelect">Формат на выходе <span class="tip" tabindex="0" data-tip="MP4 (H.264) — самый совместимый вариант, проигрывается везде. WebM (VP9) — легче по весу. MKV/AVI/MOV — тот же H.264, другой контейнер."></span></label>
+        <select id="videoFormatSelect">
+          <option value="mp4" selected>MP4 (H.264)</option>
+          <option value="webm">WebM (VP9)</option>
+          <option value="mkv">MKV</option>
+          <option value="avi">AVI</option>
+          <option value="mov">MOV</option>
+        </select>
+      </div>
+      <div class="resize-sub enabled" id="videoQualityField">
+        <label for="videoQualitySlider">Качество: <input type="number" class="field-value-input" id="videoQualityValue" min="1" max="100" value="70">% <span class="tip" tabindex="0" data-tip="Выше — лучше картинка, но тяжелее файл. Настройка одна на видео и звук. Не действует при включённом «Без перекодирования» или «Извлечь только звук»."></span></label>
+        <input type="range" id="videoQualitySlider" min="1" max="100" value="70">
+      </div>
+      <div class="field">
+        <div class="toggle-row">
+          <label class="switch">
+            <input type="checkbox" id="videoNoRecodeToggle">
+            <span class="track"></span>
+            <span class="thumb"></span>
+          </label>
+          <span class="row-label-group">
+            <label for="videoNoRecodeToggle" style="margin:0;">Без перекодирования (быстро)</label>
+            <span class="tip" tabindex="0" data-tip="Если исходное видео уже в нужном кодеке — просто перекладывает в новый контейнер без сжатия, в разы быстрее. Качество/размер не меняются. Если формат не подходит — автоматически переключится на обычное перекодирование."></span>
+          </span>
+        </div>
+      </div>
+      <div class="field">
+        <div class="toggle-row">
+          <label class="switch">
+            <input type="checkbox" id="videoAudioOnlyToggle">
+            <span class="track"></span>
+            <span class="thumb"></span>
+          </label>
+          <span class="row-label-group">
+            <label for="videoAudioOnlyToggle" style="margin:0;">Извлечь только звук (MP3)</label>
+            <span class="tip" tabindex="0" data-tip="Вместо видео сохранит только звуковую дорожку в MP3. Формат/качество видео при этом не действуют."></span>
+          </span>
+        </div>
+      </div>
+      <div class="field">
+        <label>Обрезка (необязательно) <span class="tip" tabindex="0" data-tip="Оставьте пустыми, чтобы не обрезать. Указывайте в секундах от начала видео."></span></label>
+        <div class="dim-row">
+          <div class="dim-field">
+            <label for="videoTrimStartInput">Начало, сек</label>
+            <input type="number" id="videoTrimStartInput" min="0" step="0.1" placeholder="0">
+          </div>
+          <div class="dim-field">
+            <label for="videoTrimEndInput">Конец, сек</label>
+            <input type="number" id="videoTrimEndInput" min="0" step="0.1" placeholder="до конца">
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="apply-row">
+      <p class="field-note" style="margin:0;">Видео обрабатываются по одному локально — большие файлы могут занять время</p>
+      <button class="btn" id="applyVideoBtn">Применить</button>
+    </div>
+  </div>
+
+  <div class="panel" id="audioControlsPanel">
+    <p class="panel-title">Настройки конвертации аудио</p>
+    <div class="controls-grid">
+      <div class="field">
+        <label for="audioFormatSelect">Формат на выходе <span class="tip" tabindex="0" data-tip="MP3 — самый совместимый. AAC/OGG — похожее сжатие, разная совместимость. WAV/FLAC — без потерь, но тяжелее, качество тут не применяется."></span></label>
+        <select id="audioFormatSelect">
+          <option value="mp3" selected>MP3</option>
+          <option value="aac">AAC (M4A)</option>
+          <option value="ogg">OGG (Vorbis)</option>
+          <option value="flac">FLAC (без потерь)</option>
+          <option value="wav">WAV (без потерь)</option>
+        </select>
+      </div>
+      <div class="resize-sub enabled" id="audioQualityField">
+        <label for="audioQualitySlider">Качество: <input type="number" class="field-value-input" id="audioQualityValue" min="1" max="100" value="70">% <span class="tip" tabindex="0" data-tip="Выше — лучше звук, но тяжелее файл. На WAV/FLAC не влияет — там всегда без потерь."></span></label>
+        <input type="range" id="audioQualitySlider" min="1" max="100" value="70">
+      </div>
+      <div class="field">
+        <div class="toggle-row">
+          <label class="switch">
+            <input type="checkbox" id="audioTrimSilenceToggle">
+            <span class="track"></span>
+            <span class="thumb"></span>
+          </label>
+          <span class="row-label-group">
+            <label for="audioTrimSilenceToggle" style="margin:0;">Обрезать тишину</label>
+            <span class="tip" tabindex="0" data-tip="Убирает тихие участки в начале и конце записи."></span>
+          </span>
+        </div>
+        <div class="toggle-row" style="margin-top:10px;">
+          <label class="switch">
+            <input type="checkbox" id="audioNormalizeToggle">
+            <span class="track"></span>
+            <span class="thumb"></span>
+          </label>
+          <span class="row-label-group">
+            <label for="audioNormalizeToggle" style="margin:0;">Нормализовать громкость</label>
+            <span class="tip" tabindex="0" data-tip="Выравнивает громкость до стандартного уровня (EBU R128) — полезно, если запись слишком тихая или скачет по громкости."></span>
+          </span>
+        </div>
+      </div>
+    </div>
+    <div class="apply-row">
+      <p class="field-note" style="margin:0;">Аудио обрабатывается по одному локально</p>
+      <button class="btn" id="applyAudioBtn">Применить</button>
+    </div>
+  </div>
+
+  <div class="panel" id="documentControlsPanel">
+    <p class="panel-title">Настройки конвертации документов</p>
+    <div class="controls-grid">
+      <div class="field">
+        <label for="documentFormatSelect">Формат на выходе <span class="tip" tabindex="0" data-tip="Конвертация между DOCX, ODT, RTF, Markdown и HTML. Сжатие PDF — отдельная панель ниже, с собственным движком."></span></label>
+        <select id="documentFormatSelect">
+          <option value="docx" selected>DOCX (Word)</option>
+          <option value="odt">ODT (OpenDocument)</option>
+          <option value="rtf">RTF</option>
+          <option value="md">Markdown (MD)</option>
+          <option value="html">HTML</option>
+        </select>
+      </div>
+    </div>
+    <div class="apply-row">
+      <p class="field-note" style="margin:0;">Форматирование при конвертации между этими форматами обычно сохраняется хорошо</p>
+      <button class="btn" id="applyDocumentBtn">Применить</button>
+    </div>
+  </div>
+
+  <div class="panel" id="pdfControlsPanel">
+    <p class="panel-title">Настройки сжатия PDF</p>
+    <div class="controls-grid">
+      <div class="field">
+        <label for="pdfModeSelect">Быстрый режим <span class="tip" tabindex="0" data-tip="Пресеты движка сжатия: чем выше качество, тем меньше сжимаются изображения. «Пользовательский режим» открывает точные настройки ниже."></span></label>
+        <select id="pdfModeSelect">
+          <option value="screen">Максимальное сжатие</option>
+          <option value="ebook" selected>Оптимальное качество</option>
+          <option value="printer">Высокое качество</option>
+          <option value="prepress">Для печати</option>
+          <option value="custom">Пользовательский режим</option>
+        </select>
+      </div>
+      <div class="field resize-sub" id="pdfQualityField">
+        <label for="pdfQualitySlider">Качество ↔ Размер файла: <input type="number" class="field-value-input" id="pdfQualityValue" min="1" max="100" value="60">% <span class="tip" tabindex="0" data-tip="Меньше — легче файл, но заметнее артефакты на изображениях внутри PDF."></span></label>
+        <input type="range" id="pdfQualitySlider" min="1" max="100" value="60">
+      </div>
+      <div class="field resize-sub" id="pdfDpiField">
+        <label for="pdfDpiSelect">Разрешение изображений (DPI)</label>
+        <select id="pdfDpiSelect">
+          <option value="">Сохранить оригинал</option>
+          <option value="300">300 DPI</option>
+          <option value="150" selected>150 DPI</option>
+          <option value="96">96 DPI</option>
+          <option value="custom">Своё значение…</option>
+        </select>
+      </div>
+      <div class="field resize-sub" id="pdfCustomDpiField" style="display:none;">
+        <label for="pdfCustomDpiInput">Своё DPI</label>
+        <input type="number" id="pdfCustomDpiInput" min="10" max="1200" value="150">
+      </div>
+      <div class="field resize-sub" id="pdfImageFormatField">
+        <label for="pdfImageFormatSelect">Формат изображений</label>
+        <select id="pdfImageFormatSelect">
+          <option value="original">Сохранить оригинал</option>
+          <option value="jpeg" selected>Оптимизировать JPEG</option>
+          <option value="png">Оптимизировать PNG</option>
+        </select>
+      </div>
+    </div>
+
+    <p class="panel-title" style="margin-top:18px;">Дополнительная оптимизация</p>
+    <div class="controls-grid">
+      <div class="toggle-row">
+        <label class="switch"><input type="checkbox" id="pdfStripMetadataToggle" checked><span class="track"></span><span class="thumb"></span></label>
+        <span class="row-label-group"><label for="pdfStripMetadataToggle" style="margin:0;">Удалить лишние метаданные</label></span>
+      </div>
+      <div class="toggle-row">
+        <label class="switch"><input type="checkbox" id="pdfOptimizeImagesToggle" checked><span class="track"></span><span class="thumb"></span></label>
+        <span class="row-label-group"><label for="pdfOptimizeImagesToggle" style="margin:0;">Оптимизировать встроенные изображения</label></span>
+      </div>
+      <div class="toggle-row">
+        <label class="switch"><input type="checkbox" id="pdfCompressStreamsToggle" checked><span class="track"></span><span class="thumb"></span></label>
+        <span class="row-label-group"><label for="pdfCompressStreamsToggle" style="margin:0;">Сжать внутренние потоки PDF</label></span>
+      </div>
+      <div class="toggle-row">
+        <label class="switch"><input type="checkbox" checked disabled><span class="track"></span><span class="thumb"></span></label>
+        <span class="row-label-group"><label style="margin:0; color:var(--text-dim);">Удалить неиспользуемые объекты</label><span class="tip" tabindex="0" data-tip="Выполняется всегда — движок пересобирает файл и переносит только объекты, на которые реально есть ссылки."></span></span>
+      </div>
+      <div class="toggle-row">
+        <label class="switch"><input type="checkbox" id="pdfOptimizeFontsToggle" checked><span class="track"></span><span class="thumb"></span></label>
+        <span class="row-label-group"><label for="pdfOptimizeFontsToggle" style="margin:0;">Оптимизировать шрифты</label></span>
+      </div>
+      <div class="toggle-row">
+        <label class="switch"><input type="checkbox" id="pdfFastWebViewToggle"><span class="track"></span><span class="thumb"></span></label>
+        <span class="row-label-group"><label for="pdfFastWebViewToggle" style="margin:0;">Подготовить PDF для быстрой загрузки в интернете</label></span>
+      </div>
+      <div class="toggle-row">
+        <label class="switch"><input type="checkbox" id="pdfStripHiddenToggle" checked><span class="track"></span><span class="thumb"></span></label>
+        <span class="row-label-group"><label for="pdfStripHiddenToggle" style="margin:0;">Удалить скрытые данные документа</label></span>
+      </div>
+    </div>
+
+    <div class="summary-stats" id="pdfEstimateBox" style="margin-top:18px;">
+      <div><span class="stat-label">Исходный размер</span><span class="stat-value" id="pdfEstimateOriginal">—</span></div>
+      <div><span class="stat-label">Примерный размер после сжатия</span><span class="stat-value" id="pdfEstimateResult">—</span></div>
+      <div><span class="stat-label">Ожидаемое уменьшение</span><span class="stat-value good" id="pdfEstimateSavings">—</span></div>
+      <div><span class="stat-label">Потеря качества</span><span class="stat-value" id="pdfEstimateQuality">—</span></div>
+    </div>
+
+    <div class="apply-row">
+      <p class="field-note" style="margin:0;">PDF с паролем не поддерживаются — сначала снимите пароль в другой программе</p>
+      <button class="btn" id="applyPdfBtn">Применить</button>
+    </div>
+  </div>
+
+  <div class="table-section" id="tableSection">
+    <div class="table-wrap">
+      <table class="file-table">
+        <thead>
+          <tr>
+            <th>Файл</th>
+            <th class="num">Исходный</th>
+            <th></th>
+            <th class="num">Результат</th>
+            <th>Экономия</th>
+            <th></th>
+          </tr>
+        </thead>
+        <tbody id="fileRows"></tbody>
+      </table>
+    </div>
+  </div>
+
+  <div class="summary-bar" id="summaryBar">
+    <div class="summary-stats">
+      <div><span class="stat-label">Файлов</span><span class="stat-value" id="statCount">0</span></div>
+      <div><span class="stat-label">Исходный размер</span><span class="stat-value" id="statOriginal">0 KB</span></div>
+      <div><span class="stat-label">Результат</span><span class="stat-value" id="statOutput">0 KB</span></div>
+      <div><span class="stat-label">Экономия</span><span class="stat-value good" id="statSavings">0%</span></div>
+    </div>
+    <div style="display:flex; gap:10px;">
+      <button class="btn-ghost btn" id="clearAllBtn">Очистить</button>
+      <button class="btn" id="downloadAllBtn" title="Диалог сохранения на каждый файл">Сохранить все файлы</button>
+    </div>
+  </div>
+
+  <div class="toast" id="toast" role="status" aria-live="polite"></div>
+</div>
+
+<div class="drag-overlay" id="dragOverlay">
+  <svg class="drag-overlay-border">
+    <rect x="0" y="0" width="100%" height="100%" rx="50" ry="50" fill="none" stroke-width="4" stroke-dasharray="12 17"></rect>
+  </svg>
+</div>
+
+<div class="compare-modal embedded" id="compareModal">
+  <button class="compare-close" id="compareClose" aria-label="Закрыть сравнение"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg></button>
+  <button class="compare-switch-btn" id="toBatchBtn">Массовая обработка</button>
+  <div class="compare-name" id="compareName"></div>
+
+  <div class="compare-empty" id="compareEmptyZone" tabindex="0" role="button" aria-label="Выбрать фото">
+    <div class="compare-empty-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M8 3 4 7l4 4"/><path d="M4 7h16"/><path d="m16 21 4-4-4-4"/><path d="M20 17H4"/></svg></div>
+    <div class="compare-empty-title">Перетащите фото сюда</div>
+    <div class="compare-empty-sub">или нажмите, чтобы выбрать файл · фото открываются здесь, остальное — в массовой обработке</div>
+    <input type="file" id="compareEmptyInput" accept="image/*,video/*,audio/*,.mkv,.mov,.avi,.wmv,.flv,.3gp,.mp3,.wav,.flac,.aac,.ogg,.m4a,.wma,.opus,.aiff,.pdf,.docx,.odt,.rtf,.md,.html,.htm" multiple style="display:none;">
+  </div>
+
+  <div class="compare-main" id="compareMain">
+    <div class="compare-viewport" id="compareViewport">
+      <div class="compare-frame" id="compareFrame">
+        <img class="compare-img compare-before" id="compareBefore" alt="Исходное изображение">
+        <img class="compare-img compare-after" id="compareAfter" alt="Результат конвертации">
+      </div>
+      <div class="compare-handle" id="compareHandle">
+        <div class="compare-handle-line"></div>
+        <div class="compare-handle-grip"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M8 3 4 7l4 4"/><path d="M4 7h16"/><path d="m16 21 4-4-4-4"/><path d="M20 17H4"/></svg></div>
+      </div>
+      <span class="compare-label compare-label-before" id="compareLabelBefore">До</span>
+      <span class="compare-label compare-label-after" id="compareLabelAfter">После</span>
+    </div>
+
+    <div class="compare-zoom">
+      <button class="compare-zoom-btn" id="compareZoomOut" aria-label="Уменьшить масштаб">−</button>
+      <button class="compare-zoom-value" id="compareZoomValue" title="Сбросить масштаб до 100%">100%</button>
+      <button class="compare-zoom-btn" id="compareZoomIn" aria-label="Увеличить масштаб">+</button>
+    </div>
+
+    <div class="compare-panel compare-panel-left">
+      <span>Оригинал ·</span>
+      <span id="compareOrigDims"></span>
+      <span>·</span>
+      <span id="compareOrigSize"></span>
+    </div>
+
+    <div class="compare-panel compare-panel-right">
+      <span class="compare-savings-badge" id="compareSavingsChip"></span>
+      <span id="compareOutDims"></span>
+      <span>·</span>
+      <span id="compareOutSize"></span>
+      <button class="compare-download-btn" id="compareDownloadBtn" title="Сохранить" aria-label="Сохранить файл"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 15V3"/><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><path d="m7 10 5 5 5-5"/></svg></button>
+    </div>
+  </div>
+
+  <aside class="compare-sidebar">
+    <div class="compare-sidebar-header title">Редактор</div>
+
+    <div class="compare-row">
+      <span class="row-label-group">
+        <label for="compareResizeToggle">Изменить размер</label>
+        <span class="tip" tabindex="0" data-tip="Задаёт ширину и высоту в пикселях — уменьшает вес за счёт разрешения."></span>
+      </span>
+      <label class="switch">
+        <input type="checkbox" id="compareResizeToggle">
+        <span class="track"></span>
+        <span class="thumb"></span>
+      </label>
+    </div>
+    <div class="compare-resize-sub" id="compareResizeSub">
+      <label for="compareResizeMethodSelect">Метод изменения размера <span class="tip" tabindex="0" data-tip="Lanczos3 — чётче, но медленнее. Билинейный — быстрее. Ближайший сосед — без сглаживания, для пиксель-арта. Авто — самый быстрый."></span></label>
+      <select id="compareResizeMethodSelect">
+        <option value="auto" selected>Авто (браузер, быстрее)</option>
+        <option value="nearest">Ближайший сосед</option>
+        <option value="bilinear">Билинейный</option>
+        <option value="lanczos3">Lanczos3 (лучшее качество)</option>
+      </select>
+
+      <label for="compareResizeDimModeSelect" style="margin-top:10px; display:block;">Что указывать <span class="tip" tabindex="0" data-tip="Ширина/высота — точные размеры сторон как есть. Короткая/длинная сторона — одно число всегда идёт на меньшую сторону фото, другое — на большую."></span></label>
+      <select id="compareResizeDimModeSelect">
+        <option value="wh" selected>Ширина / высота</option>
+        <option value="sides">Короткая / длинная сторона</option>
+      </select>
+
+      <div class="dim-row" id="compareResizeWHRow" style="margin-top:10px;">
+        <div class="dim-field">
+          <label for="compareResizeWidthInput">Ширина, px</label>
+          <input type="number" id="compareResizeWidthInput" min="1" max="10000">
+        </div>
+        <div class="dim-field">
+          <label for="compareResizeHeightInput">Высота, px</label>
+          <input type="number" id="compareResizeHeightInput" min="1" max="10000">
+        </div>
+      </div>
+
+      <div class="dim-row" id="compareResizeSidesRow" style="margin-top:10px; display:none;">
+        <div class="dim-field">
+          <label for="compareResizeShortInput">Короткая сторона, px</label>
+          <input type="number" id="compareResizeShortInput" min="1" max="10000">
+        </div>
+        <div class="dim-field">
+          <label for="compareResizeLongInput">Длинная сторона, px</label>
+          <input type="number" id="compareResizeLongInput" min="1" max="10000">
+        </div>
+      </div>
+
+      <div class="compare-row" style="padding:10px 0 0;">
+        <span class="row-label-group">
+          <label for="compareMaintainAspectToggle">Сохранить пропорции</label>
+          <span class="tip" tabindex="0" data-tip="Включено — ширина и высота связаны по пропорциям фото. Выключено — можно задать любые значения, форма может исказиться."></span>
+        </span>
+        <label class="switch">
+          <input type="checkbox" id="compareMaintainAspectToggle" checked>
+          <span class="track"></span>
+          <span class="thumb"></span>
+        </label>
+      </div>
+    </div>
+
+    <div class="compare-row">
+      <span class="row-label-group">
+        <label for="comparePaletteToggle">Уменьшить палитру</label>
+        <span class="tip" tabindex="0" data-tip="Сокращает число цветов — сильно уменьшает вес PNG."></span>
+      </span>
+      <label class="switch">
+        <input type="checkbox" id="comparePaletteToggle">
+        <span class="track"></span>
+        <span class="thumb"></span>
+      </label>
+    </div>
+    <div class="compare-resize-sub" id="comparePaletteSub">
+      <label for="comparePaletteColorsSlider">Цветов: <span class="field-value" id="comparePaletteColorsValue">256</span> <span class="tip" tabindex="0" data-tip="Меньше цветов — легче файл, но заметнее переходы."></span></label>
+      <input type="range" id="comparePaletteColorsSlider" min="2" max="256" step="1" value="256">
+      <div class="compare-row" style="padding:10px 0 0;">
+        <span class="row-label-group">
+          <label for="compareDitherToggle">Дизеринг</label>
+          <span class="tip" tabindex="0" data-tip="Сглаживает переходы после уменьшения палитры лёгким шумом."></span>
+        </span>
+        <label class="switch">
+          <input type="checkbox" id="compareDitherToggle" checked>
+          <span class="track"></span>
+          <span class="thumb"></span>
+        </label>
+      </div>
+    </div>
+
+    <div class="compare-sidebar-header title">Сжатие</div>
+
+    <div class="compare-field">
+      <label for="compareFormatSelect">Формат <span class="tip" tabindex="0" data-tip="WebP — самый лёгкий при хорошем качестве. JPEG — для совместимости. PNG — без потерь, но тяжелее."></span></label>
+      <select id="compareFormatSelect">
+        <option value="webp">WebP</option>
+        <option value="jpeg">JPEG</option>
+        <option value="png">PNG</option>
+      </select>
+    </div>
+    <div class="compare-field compare-resize-sub" id="compareQualityField">
+      <label for="compareQualitySlider"><span id="compareQualityLabelPrefix">Качество</span>: <input type="number" class="field-value-input" id="compareQualityValue" min="1" max="100">% <span class="tip" tabindex="0" data-tip="Меньше — легче файл, но заметнее артефакты. На PNG не влияет."></span></label>
+      <input type="range" id="compareQualitySlider" min="1" max="100">
+    </div>
+
+    <div class="compare-row">
+      <span class="row-label-group">
+        <label for="compareSmartToggle">Умное сжатие</label>
+        <span class="tip" tabindex="0" data-tip="Сам подбирает лучшее качество под нужный вес файла. Не помогает — уменьшит разрешение."></span>
+      </span>
+      <label class="switch">
+        <input type="checkbox" id="compareSmartToggle">
+        <span class="track"></span>
+        <span class="thumb"></span>
+      </label>
+    </div>
+    <div class="compare-resize-sub" id="compareSmartSub">
+      <label for="compareTargetSizeInput">Макс. вес файла</label>
+      <div class="target-size-row">
+        <input type="number" id="compareTargetSizeInput" min="10" max="20000" step="10" value="200">
+        <span class="target-size-unit">KB</span>
+      </div>
+    </div>
+
+    <p class="compare-sidebar-note" id="compareSmartHint">Подбирает лучшее качество под лимит. Не получится уложиться — уменьшит разрешение.</p>
+
+    <p class="compare-sidebar-note">Effort и Lossless не показаны — это настройки конкретных кодеков, которых нет в браузере.</p>
+  </aside>
+</div>
+
+<div class="hint-tip" id="hintTip" role="tooltip"></div>
+
+<script>
+(function () {
+  "use strict";
+
+  // Lucide icons (https://lucide.dev, ISC license), inlined as markup so the
+  // row/compare-view action buttons render real vector icons instead of
+  // unicode glyphs. stroke="currentColor" picks up the button's own color.
+  var ICONS = {
+    compare: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M8 3 4 7l4 4"/><path d="M4 7h16"/><path d="m16 21 4-4-4-4"/><path d="M20 17H4"/></svg>',
+    download: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 15V3"/><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><path d="m7 10 5 5 5-5"/></svg>',
+    x: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg>',
+    check: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>'
+  };
+
+  var FORMAT_MIME = { webp: "image/webp", jpeg: "image/jpeg", png: "image/png", avif: "image/avif" };
+  var LOSSLESS_IMAGE_FORMATS = { png: true, gif: true, bmp: true };
+  var FORMAT_EXT = {
+    webp: "webp", jpeg: "jpg", png: "png", gif: "gif", bmp: "bmp", avif: "avif",
+    mp4: "mp4", webm: "webm", mkv: "mkv", avi: "avi", mov: "mov",
+    mp3: "mp3", aac: "m4a", ogg: "ogg", wav: "wav", flac: "flac",
+    docx: "docx", odt: "odt", rtf: "rtf", md: "md", html: "html",
+    pdf: "pdf"
+  };
+
+  // ---- Resize kernels (own implementation — the browser only exposes a
+  // single "smooth on/off" toggle, not a choice of resampling filters) ----
+  function lanczosKernel(x, a) {
+    if (x === 0) return 1;
+    if (x <= -a || x >= a) return 0;
+    var px = Math.PI * x;
+    return a * Math.sin(px) * Math.sin(px / a) / (px * px);
+  }
+
+  function bilinearKernel(x) {
+    x = Math.abs(x);
+    return x < 1 ? 1 - x : 0;
+  }
+
+  /* Separable two-pass resampling (horizontal, then vertical). The filter
+     support widens automatically when downscaling (filterScale > 1) so
+     every source pixel still contributes — the standard area-correct way
+     to do Lanczos/bilinear resizing without aliasing. */
+  function resizeSeparable(srcData, srcW, srcH, dstW, dstH, kernelFn, support) {
+    var scaleX = dstW / srcW;
+    var filterScaleX = Math.max(1, 1 / scaleX);
+    var radiusX = support * filterScaleX;
+    var temp = new Float32Array(dstW * srcH * 4);
+    var x, y, sx, si, di, w, r, g, b, a, wsum, srcX, left, right, cx;
+
+    for (y = 0; y < srcH; y++) {
+      for (x = 0; x < dstW; x++) {
+        srcX = (x + 0.5) / scaleX - 0.5;
+        left = Math.floor(srcX - radiusX);
+        right = Math.ceil(srcX + radiusX);
+        r = 0; g = 0; b = 0; a = 0; wsum = 0;
+        for (sx = left; sx <= right; sx++) {
+          w = kernelFn((sx - srcX) / filterScaleX, support);
+          if (w === 0) continue;
+          cx = sx < 0 ? 0 : (sx >= srcW ? srcW - 1 : sx);
+          si = (y * srcW + cx) * 4;
+          r += srcData[si] * w;
+          g += srcData[si + 1] * w;
+          b += srcData[si + 2] * w;
+          a += srcData[si + 3] * w;
+          wsum += w;
+        }
+        di = (y * dstW + x) * 4;
+        if (wsum > 0) {
+          temp[di] = r / wsum;
+          temp[di + 1] = g / wsum;
+          temp[di + 2] = b / wsum;
+          temp[di + 3] = a / wsum;
+        }
+      }
+    }
+
+    var scaleY = dstH / srcH;
+    var filterScaleY = Math.max(1, 1 / scaleY);
+    var radiusY = support * filterScaleY;
+    var out = new Uint8ClampedArray(dstW * dstH * 4);
+    var sy, ti, oi, top, bottom, srcY, cy, w2, r2, g2, b2, a2, wsum2;
+
+    for (x = 0; x < dstW; x++) {
+      for (y = 0; y < dstH; y++) {
+        srcY = (y + 0.5) / scaleY - 0.5;
+        top = Math.floor(srcY - radiusY);
+        bottom = Math.ceil(srcY + radiusY);
+        r2 = 0; g2 = 0; b2 = 0; a2 = 0; wsum2 = 0;
+        for (sy = top; sy <= bottom; sy++) {
+          w2 = kernelFn((sy - srcY) / filterScaleY, support);
+          if (w2 === 0) continue;
+          cy = sy < 0 ? 0 : (sy >= srcH ? srcH - 1 : sy);
+          ti = (cy * dstW + x) * 4;
+          r2 += temp[ti] * w2;
+          g2 += temp[ti + 1] * w2;
+          b2 += temp[ti + 2] * w2;
+          a2 += temp[ti + 3] * w2;
+          wsum2 += w2;
+        }
+        oi = (y * dstW + x) * 4;
+        if (wsum2 > 0) {
+          out[oi] = r2 / wsum2;
+          out[oi + 1] = g2 / wsum2;
+          out[oi + 2] = b2 / wsum2;
+          out[oi + 3] = a2 / wsum2;
+        }
+      }
+    }
+    return new ImageData(out, dstW, dstH);
+  }
+
+  /* Draws `bitmap` (srcW×srcH) into a new canvas at dstW×dstH using the
+     chosen resize method. "auto"/"nearest" use the browser's own drawImage
+     (fast); "bilinear"/"lanczos3" run the manual kernel above. */
+  async function drawResized(bitmap, srcW, srcH, dstW, dstH, method) {
+    var canvas = document.createElement("canvas");
+    canvas.width = dstW;
+    canvas.height = dstH;
+    var ctx = canvas.getContext("2d");
+
+    if (dstW === srcW && dstH === srcH) {
+      ctx.drawImage(bitmap, 0, 0);
+      return canvas;
+    }
+
+    if (method === "nearest") {
+      ctx.imageSmoothingEnabled = false;
+      ctx.drawImage(bitmap, 0, 0, dstW, dstH);
+      return canvas;
+    }
+
+    if (method === "bilinear" || method === "lanczos3") {
+      var srcBitmap = bitmap;
+      var curW = srcW, curH = srcH;
+
+      /* The manual kernel pass below costs roughly pixels × kernel-width —
+         on a big downscale (e.g. a 40MP photo down to 1920px) that kernel
+         gets wide and the source is huge, so it's the actual bottleneck on
+         heavy photos. Handing it something already close to the target
+         size instead — via the browser's own hardware-accelerated resizer —
+         is dramatically cheaper, with the final Lanczos/bilinear pass still
+         doing the last-mile quality work, so output quality is unaffected. */
+      var scale = Math.min(dstW / srcW, dstH / srcH);
+      if (scale < 0.5 && typeof createImageBitmap === "function") {
+        var preW = Math.round(dstW * 2);
+        var preH = Math.round(dstH * 2);
+        if (preW < curW && preH < curH) {
+          try {
+            srcBitmap = await createImageBitmap(bitmap, {
+              resizeWidth: preW,
+              resizeHeight: preH,
+              resizeQuality: "high"
+            });
+            curW = preW;
+            curH = preH;
+          } catch (e) {
+            srcBitmap = bitmap;
+            curW = srcW;
+            curH = srcH;
+          }
+        }
+      }
+
+      var srcCanvas = document.createElement("canvas");
+      srcCanvas.width = curW;
+      srcCanvas.height = curH;
+      var srcCtx = srcCanvas.getContext("2d");
+      srcCtx.drawImage(srcBitmap, 0, 0, curW, curH);
+      if (srcBitmap !== bitmap) srcBitmap.close && srcBitmap.close();
+      var srcImageData = srcCtx.getImageData(0, 0, curW, curH);
+      var kernelFn = method === "lanczos3" ? lanczosKernel : bilinearKernel;
+      var support = method === "lanczos3" ? 3 : 1;
+      var outData = resizeSeparable(srcImageData.data, curW, curH, dstW, dstH, kernelFn, support);
+      ctx.putImageData(outData, 0, 0);
+      return canvas;
+    }
+
+    ctx.imageSmoothingEnabled = true;
+    ctx.imageSmoothingQuality = "high";
+    ctx.drawImage(bitmap, 0, 0, dstW, dstH);
+    return canvas;
+  }
+
+  // ---- Palette reduction: median-cut quantization + optional dithering ----
+  function colorRange(colors) {
+    var minR = 255, maxR = 0, minG = 255, maxG = 0, minB = 255, maxB = 0;
+    for (var i = 0; i < colors.length; i++) {
+      var c = colors[i];
+      if (c.r < minR) minR = c.r;
+      if (c.r > maxR) maxR = c.r;
+      if (c.g < minG) minG = c.g;
+      if (c.g > maxG) maxG = c.g;
+      if (c.b < minB) minB = c.b;
+      if (c.b > maxB) maxB = c.b;
+    }
+    var rr = maxR - minR, rg = maxG - minG, rb = maxB - minB;
+    if (rr >= rg && rr >= rb) return { channel: "r", max: rr };
+    if (rg >= rr && rg >= rb) return { channel: "g", max: rg };
+    return { channel: "b", max: rb };
+  }
+
+  function averageColor(colors) {
+    var totalCount = 0, r = 0, g = 0, b = 0;
+    for (var i = 0; i < colors.length; i++) {
+      var c = colors[i];
+      r += c.r * c.count;
+      g += c.g * c.count;
+      b += c.b * c.count;
+      totalCount += c.count;
+    }
+    if (totalCount === 0) return { r: 0, g: 0, b: 0 };
+    return { r: Math.round(r / totalCount), g: Math.round(g / totalCount), b: Math.round(b / totalCount) };
+  }
+
+  function buildPalette(data, maxColors) {
+    var colorMap = new Map();
+    var totalPixels = data.length / 4;
+    var sampleEvery = totalPixels > 300000 ? Math.ceil(totalPixels / 300000) : 1;
+
+    for (var i = 0; i < data.length; i += 4 * sampleEvery) {
+      var key = (data[i] << 16) | (data[i + 1] << 8) | data[i + 2];
+      colorMap.set(key, (colorMap.get(key) || 0) + 1);
+    }
+
+    var boxes = [{
+      colors: Array.from(colorMap.entries()).map(function (e) {
+        return { r: (e[0] >> 16) & 255, g: (e[0] >> 8) & 255, b: e[0] & 255, count: e[1] };
+      })
+    }];
+
+    while (boxes.length < maxColors) {
+      var boxIndex = -1, maxRange = -1, splitChannel = "r";
+      for (var bi = 0; bi < boxes.length; bi++) {
+        if (boxes[bi].colors.length <= 1) continue;
+        var range = colorRange(boxes[bi].colors);
+        if (range.max > maxRange) {
+          maxRange = range.max;
+          boxIndex = bi;
+          splitChannel = range.channel;
+        }
+      }
+      if (boxIndex === -1 || maxRange <= 0) break;
+
+      var toSplit = boxes[boxIndex];
+      toSplit.colors.sort(function (a, b) { return a[splitChannel] - b[splitChannel]; });
+      var mid = Math.floor(toSplit.colors.length / 2);
+      boxes.splice(boxIndex, 1,
+        { colors: toSplit.colors.slice(0, mid) },
+        { colors: toSplit.colors.slice(mid) });
+    }
+
+    return boxes.filter(function (b) { return b.colors.length > 0; }).map(function (box) {
+      return averageColor(box.colors);
+    });
+  }
+
+  function nearestPaletteColor(r, g, b, palette) {
+    var best = 0, bestDist = Infinity;
+    for (var i = 0; i < palette.length; i++) {
+      var p = palette[i];
+      var dr = r - p.r, dg = g - p.g, db = b - p.b;
+      var dist = dr * dr + dg * dg + db * db;
+      if (dist < bestDist) { bestDist = dist; best = i; }
+    }
+    return palette[best];
+  }
+
+  /* Cache keyed on a coarse (÷4) bucket of the RGB value — exact-match
+     caching alone barely helps once dithering is diffusing error into
+     every pixel, since the same nominal color rarely repeats byte-exact,
+     but a coarse bucket still hits >95% of lookups with no visible loss
+     given the palette itself is already ≤256 colors. */
+  function makeNearestColorLookup(palette) {
+    var cache = new Map();
+    return function (r, g, b) {
+      var key = ((r >> 2) << 16) | ((g >> 2) << 8) | (b >> 2);
+      var color = cache.get(key);
+      if (!color) {
+        color = nearestPaletteColor(r, g, b, palette);
+        cache.set(key, color);
+      }
+      return color;
+    };
+  }
+
+  function mapToPalette(data, palette) {
+    var lookup = makeNearestColorLookup(palette);
+    for (var i = 0; i < data.length; i += 4) {
+      var color = lookup(data[i], data[i + 1], data[i + 2]);
+      data[i] = color.r;
+      data[i + 1] = color.g;
+      data[i + 2] = color.b;
+    }
+  }
+
+  function distributeError(data, w, h, x, y, errR, errG, errB, factor) {
+    if (x < 0 || x >= w || y < 0 || y >= h) return;
+    var idx = (y * w + x) * 4;
+    data[idx] = data[idx] + errR * factor;
+    data[idx + 1] = data[idx + 1] + errG * factor;
+    data[idx + 2] = data[idx + 2] + errB * factor;
+  }
+
+  function ditherFloydSteinberg(data, w, h, palette) {
+    var lookup = makeNearestColorLookup(palette);
+    for (var y = 0; y < h; y++) {
+      for (var x = 0; x < w; x++) {
+        var idx = (y * w + x) * 4;
+        var oldR = data[idx], oldG = data[idx + 1], oldB = data[idx + 2];
+        var newColor = lookup(oldR, oldG, oldB);
+        data[idx] = newColor.r;
+        data[idx + 1] = newColor.g;
+        data[idx + 2] = newColor.b;
+
+        var errR = oldR - newColor.r;
+        var errG = oldG - newColor.g;
+        var errB = oldB - newColor.b;
+
+        distributeError(data, w, h, x + 1, y, errR, errG, errB, 7 / 16);
+        distributeError(data, w, h, x - 1, y + 1, errR, errG, errB, 3 / 16);
+        distributeError(data, w, h, x, y + 1, errR, errG, errB, 5 / 16);
+        distributeError(data, w, h, x + 1, y + 1, errR, errG, errB, 1 / 16);
+      }
+    }
+  }
+
+  function quantizeCanvas(canvas, maxColors, dither) {
+    var ctx = canvas.getContext("2d");
+    var w = canvas.width, h = canvas.height;
+    var imageData = ctx.getImageData(0, 0, w, h);
+    var palette = buildPalette(imageData.data, maxColors);
+    if (dither) {
+      ditherFloydSteinberg(imageData.data, w, h, palette);
+    } else {
+      mapToPalette(imageData.data, palette);
+    }
+    ctx.putImageData(imageData, 0, 0);
+  }
+
+  var items = [];
+  var nextId = 1;
+  var webpSupported = true;
+
+  var dropzone = document.getElementById("dropzone");
+  var fileInput = document.getElementById("fileInput");
+  var useDefaultFolderToggle = document.getElementById("useDefaultFolderToggle");
+  var chooseDefaultFolderBtn = document.getElementById("chooseDefaultFolderBtn");
+  var defaultFolderPathEl = document.getElementById("defaultFolderPath");
+  var fileSuffixInput = document.getElementById("fileSuffixInput");
+  var rememberSettingsToggle = document.getElementById("rememberSettingsToggle");
+  var controlsPanel = document.getElementById("controlsPanel");
+  var formatSelect = document.getElementById("formatSelect");
+  var qualitySlider = document.getElementById("qualitySlider");
+  var qualityValue = document.getElementById("qualityValue");
+  var qualityField = document.getElementById("qualityField");
+  var resizeToggle = document.getElementById("resizeToggle");
+  var resizeSub = document.getElementById("resizeSub");
+  var resizeMethodSelect = document.getElementById("resizeMethodSelect");
+  var resizeDimModeSelect = document.getElementById("resizeDimModeSelect");
+  var resizeWHRow = document.getElementById("resizeWHRow");
+  var resizeSidesRow = document.getElementById("resizeSidesRow");
+  var resizeWidthInput = document.getElementById("resizeWidthInput");
+  var resizeHeightInput = document.getElementById("resizeHeightInput");
+  var resizeShortInput = document.getElementById("resizeShortInput");
+  var resizeLongInput = document.getElementById("resizeLongInput");
+  var maintainAspectToggle = document.getElementById("maintainAspectToggle");
+  var smartToggle = document.getElementById("smartToggle");
+  var smartSub = document.getElementById("smartSub");
+  var targetSizeInput = document.getElementById("targetSizeInput");
+  var qualityLabelPrefix = document.getElementById("qualityLabelPrefix");
+  var paletteToggle = document.getElementById("paletteToggle");
+  var paletteSub = document.getElementById("paletteSub");
+  var paletteColorsSlider = document.getElementById("paletteColorsSlider");
+  var paletteColorsValue = document.getElementById("paletteColorsValue");
+  var ditherToggle = document.getElementById("ditherToggle");
+  var applyAllBtn = document.getElementById("applyAllBtn");
+  var cancelApplyBtn = document.getElementById("cancelApplyBtn");
+  var concurrencySelect = document.getElementById("concurrencySelect");
+  var videoControlsPanel = document.getElementById("videoControlsPanel");
+  var videoFormatSelect = document.getElementById("videoFormatSelect");
+  var videoQualitySlider = document.getElementById("videoQualitySlider");
+  var videoQualityValue = document.getElementById("videoQualityValue");
+  var applyVideoBtn = document.getElementById("applyVideoBtn");
+  var videoNoRecodeToggle = document.getElementById("videoNoRecodeToggle");
+  var videoAudioOnlyToggle = document.getElementById("videoAudioOnlyToggle");
+  var videoQualityField = document.getElementById("videoQualityField");
+  var videoTrimStartInput = document.getElementById("videoTrimStartInput");
+  var videoTrimEndInput = document.getElementById("videoTrimEndInput");
+  var audioControlsPanel = document.getElementById("audioControlsPanel");
+  var audioFormatSelect = document.getElementById("audioFormatSelect");
+  var audioQualityField = document.getElementById("audioQualityField");
+  var audioTrimSilenceToggle = document.getElementById("audioTrimSilenceToggle");
+  var audioNormalizeToggle = document.getElementById("audioNormalizeToggle");
+  var audioQualitySlider = document.getElementById("audioQualitySlider");
+  var audioQualityValue = document.getElementById("audioQualityValue");
+  var applyAudioBtn = document.getElementById("applyAudioBtn");
+  var documentControlsPanel = document.getElementById("documentControlsPanel");
+  var documentFormatSelect = document.getElementById("documentFormatSelect");
+  var applyDocumentBtn = document.getElementById("applyDocumentBtn");
+  var pdfControlsPanel = document.getElementById("pdfControlsPanel");
+  var pdfModeSelect = document.getElementById("pdfModeSelect");
+  var pdfQualityField = document.getElementById("pdfQualityField");
+  var pdfQualitySlider = document.getElementById("pdfQualitySlider");
+  var pdfQualityValue = document.getElementById("pdfQualityValue");
+  var pdfDpiField = document.getElementById("pdfDpiField");
+  var pdfDpiSelect = document.getElementById("pdfDpiSelect");
+  var pdfCustomDpiField = document.getElementById("pdfCustomDpiField");
+  var pdfCustomDpiInput = document.getElementById("pdfCustomDpiInput");
+  var pdfImageFormatField = document.getElementById("pdfImageFormatField");
+  var pdfImageFormatSelect = document.getElementById("pdfImageFormatSelect");
+  var pdfStripMetadataToggle = document.getElementById("pdfStripMetadataToggle");
+  var pdfOptimizeImagesToggle = document.getElementById("pdfOptimizeImagesToggle");
+  var pdfCompressStreamsToggle = document.getElementById("pdfCompressStreamsToggle");
+  var pdfOptimizeFontsToggle = document.getElementById("pdfOptimizeFontsToggle");
+  var pdfFastWebViewToggle = document.getElementById("pdfFastWebViewToggle");
+  var pdfStripHiddenToggle = document.getElementById("pdfStripHiddenToggle");
+  var pdfEstimateOriginal = document.getElementById("pdfEstimateOriginal");
+  var pdfEstimateResult = document.getElementById("pdfEstimateResult");
+  var pdfEstimateSavings = document.getElementById("pdfEstimateSavings");
+  var pdfEstimateQuality = document.getElementById("pdfEstimateQuality");
+  var applyPdfBtn = document.getElementById("applyPdfBtn");
+  var tableSection = document.getElementById("tableSection");
+  var fileRows = document.getElementById("fileRows");
+  var summaryBar = document.getElementById("summaryBar");
+  var statCount = document.getElementById("statCount");
+  var statOriginal = document.getElementById("statOriginal");
+  var statOutput = document.getElementById("statOutput");
+  var statSavings = document.getElementById("statSavings");
+  var clearAllBtn = document.getElementById("clearAllBtn");
+  var downloadAllBtn = document.getElementById("downloadAllBtn");
+  var webpBanner = document.getElementById("webpBanner");
+  var toastEl = document.getElementById("toast");
+  var dragOverlay = document.getElementById("dragOverlay");
+  var toastTimer = null;
+
+  function showToast(message) {
+    clearTimeout(toastTimer);
+    toastEl.textContent = message;
+    toastEl.classList.add("visible");
+    toastTimer = setTimeout(function () { toastEl.classList.remove("visible"); }, 3200);
+  }
+
+  function saveFile(filename, blob) {
+    if (window.claude && window.claude.downloads) {
+      return window.claude.downloads.save({ filename: filename, data: blob });
+    }
+    if (window.desktopAPI && window.desktopAPI.saveFile) {
+      // A real native "Save As" dialog — the old data-URL/anchor trick
+      // base64-encodes the whole blob into one giant string first, which
+      // is fine for a small image but for a multi-hundred-MB video job
+      // it froze the renderer (that was the "dark screen" bug).
+      return blob.arrayBuffer().then(function (buffer) {
+        return window.desktopAPI.saveFile(buffer, filename);
+      }).then(function (result) {
+        if (!result.saved) {
+          var err = new Error("declined");
+          err.code = "declined";
+          throw err;
+        }
+        return { status: "saved" };
+      });
+    }
+    return new Promise(function (resolve, reject) {
+      var reader = new FileReader();
+      reader.onload = function () {
+        var a = document.createElement("a");
+        a.href = reader.result;
+        a.download = filename;
+        document.body.appendChild(a);
+        a.click();
+        a.remove();
+        resolve({ status: "saved" });
+      };
+      reader.onerror = function () {
+        reject({ code: "unavailable", message: "Не удалось прочитать файл" });
+      };
+      reader.readAsDataURL(blob);
+    });
+  }
+
+  // Video/audio/document results live on disk (main-process temp path) —
+  // saving those copies straight to the chosen destination in the main
+  // process. Images are Blobs already built in the renderer (Canvas work),
+  // so those go through the normal buffer-based saveFile().
+  function saveItemOutput(item, filename) {
+    if (useDefaultFolderToggle.checked && defaultSaveFolder) {
+      return saveToDefaultFolder(item, filename);
+    }
+    if (item.outputPath && window.desktopAPI && window.desktopAPI.saveOutputFile) {
+      return window.desktopAPI.saveOutputFile(item.outputPath, filename).then(function (result) {
+        if (!result.saved) {
+          var err = new Error("declined");
+          err.code = "declined";
+          throw err;
+        }
+        return { status: "saved" };
+      });
+    }
+    return saveFile(filename, item.outputBlob);
+  }
+
+  function saveToDefaultFolder(item, filename) {
+    if (item.outputPath) {
+      return window.desktopAPI.saveToFolder({ folderPath: defaultSaveFolder, filename: filename, outputPath: item.outputPath });
+    }
+    return item.outputBlob.arrayBuffer().then(function (buffer) {
+      return window.desktopAPI.saveToFolder({ folderPath: defaultSaveFolder, filename: filename, buffer: buffer });
+    });
+  }
+
+  function errorMessage(err) {
+    var code = err && err.code;
+    if (code === "too_large") return "Файл больше 16 МБ — сожмите сильнее";
+    if (code === "rejected_extension") return "Этот формат нельзя сохранить";
+    if (code === "rate_limited") return "Уже идёт сохранение — подождите";
+    return "Не удалось сохранить файл";
+  }
+
+  function formatBytes(bytes) {
+    if (bytes < 1024) return bytes + " B";
+    if (bytes < 1024 * 1024) return (bytes / 1024).toFixed(1) + " KB";
+    return (bytes / (1024 * 1024)).toFixed(2) + " MB";
+  }
+
+  var MIME_TO_LABEL = {
+    "image/jpeg": "JPEG", "image/png": "PNG", "image/webp": "WEBP",
+    "image/gif": "GIF", "image/bmp": "BMP", "image/svg+xml": "SVG"
+  };
+  function sourceFormatLabel(item) {
+    var mime = item.file && item.file.type;
+    if (mime && MIME_TO_LABEL[mime]) return MIME_TO_LABEL[mime];
+    var ext = item.name.split(".").pop();
+    return ext ? ext.toUpperCase() : "";
+  }
+
+  var MIME_TO_FORMAT_ID = { "image/jpeg": "jpeg", "image/png": "png", "image/webp": "webp", "image/gif": "gif", "image/bmp": "bmp" };
+  function sourceFormatId(item) {
+    var mime = item.file && item.file.type;
+    if (mime && MIME_TO_FORMAT_ID[mime]) return MIME_TO_FORMAT_ID[mime];
+    var ext = item.name.split(".").pop().toLowerCase();
+    if (ext === "jpg") ext = "jpeg";
+    // Unrecognized source extension (no dot in the name, HEIC, etc.) — fall
+    // back to something FORMAT_EXT actually knows, so a save can never end
+    // up with no extension at all.
+    return FORMAT_EXT[ext] ? ext : "jpeg";
+  }
+
+  // The single-photo editor's format dropdown only offers webp/jpeg/png —
+  // assigning a <select> a value with no matching <option> silently resets
+  // it to "" instead of throwing, which then poisons the extension on save.
+  var COMPARE_FORMATS = { webp: true, jpeg: true, png: true };
+  function compareCompatibleFormat(format) {
+    return COMPARE_FORMATS[format] ? format : "webp";
+  }
+
+  function targetBytesFrom(checkbox, input) {
+    var kb = parseFloat(input.value);
+    return checkbox.checked && kb > 0 ? Math.round(kb * 1024) : null;
+  }
+
+  /* targetW/targetH are a bounding box when maintainAspect is on (image
+     fits inside without distortion — one side may end up smaller than
+     asked), or an exact, potentially distorting size when it's off. */
+  function computeResizeDimensions(srcW, srcH, targetW, targetH, maintainAspect) {
+    targetW = Math.max(1, targetW || srcW);
+    targetH = Math.max(1, targetH || srcH);
+    if (!maintainAspect) {
+      return { width: Math.round(targetW), height: Math.round(targetH) };
+    }
+    var scale = Math.min(targetW / srcW, targetH / srcH);
+    return {
+      width: Math.max(1, Math.round(srcW * scale)),
+      height: Math.max(1, Math.round(srcH * scale))
+    };
+  }
+
+  // In "short/long side" mode the two numbers don't map to a fixed axis —
+  // whichever of the photo's own width/height is smaller gets the "short"
+  // target and whichever is larger gets "long", so one setting works
+  // correctly across a batch mixing portrait and landscape photos.
+  function resolveResizeTarget(srcW, srcH, settings) {
+    if (settings.resizeMode === "sides") {
+      var widthIsShort = srcW <= srcH;
+      return {
+        targetW: widthIsShort ? settings.resizeShort : settings.resizeLong,
+        targetH: widthIsShort ? settings.resizeLong : settings.resizeShort
+      };
+    }
+    return { targetW: settings.resizeWidth, targetH: settings.resizeHeight };
+  }
+
+  function currentSettings() {
+    return {
+      format: formatSelect.value,
+      quality: parseInt(qualitySlider.value, 10),
+      resize: resizeToggle.checked,
+      resizeMode: resizeDimModeSelect.value,
+      resizeWidth: parseInt(resizeWidthInput.value, 10),
+      resizeHeight: parseInt(resizeHeightInput.value, 10),
+      resizeShort: parseInt(resizeShortInput.value, 10),
+      resizeLong: parseInt(resizeLongInput.value, 10),
+      maintainAspect: maintainAspectToggle.checked,
+      resizeMethod: resizeMethodSelect.value,
+      targetBytes: targetBytesFrom(smartToggle, targetSizeInput),
+      palette: paletteToggle.checked,
+      paletteColors: parseInt(paletteColorsSlider.value, 10),
+      dither: ditherToggle.checked
+    };
+  }
+
+  function updateFieldLabels() {
+    qualityValue.value = qualitySlider.value;
+    paletteColorsValue.textContent = paletteColorsSlider.value;
+    paletteSub.classList.toggle("enabled", paletteToggle.checked);
+    // Smart mode picks quality itself (full 1–100 range) — the slider
+    // doesn't apply there, so grey it out instead of pretending it's a ceiling.
+    qualityField.classList.toggle("enabled", formatSelect.value !== "png" && !smartToggle.checked);
+    resizeSub.classList.toggle("enabled", resizeToggle.checked);
+    smartSub.classList.toggle("enabled", smartToggle.checked);
+  }
+
+  function makeThumb(bitmap, cb) {
+    var size = 64;
+    var canvas = document.createElement("canvas");
+    canvas.width = size;
+    canvas.height = size;
+    var ctx = canvas.getContext("2d");
+    var scale = Math.max(size / bitmap.width, size / bitmap.height);
+    var w = bitmap.width * scale, h = bitmap.height * scale;
+    ctx.drawImage(bitmap, (size - w) / 2, (size - h) / 2, w, h);
+    cb(canvas.toDataURL("image/png"));
+  }
+
+  /* Decoding/resizing/encoding a photo is heavy — dropping a big batch and
+     firing createImageBitmap + conversion for every file at once used to
+     hold dozens of large bitmaps in memory simultaneously and bury the
+     main thread in unyielding work, which is what made the tab look
+     frozen. JS is single-threaded anyway, so running 2+ "concurrently"
+     bought no real speed — just doubled peak memory (two full-res bitmaps
+     + canvases alive at once) and made progress feel stalled. Strictly
+     one file at a time is both lighter and faster in practice. */
+  var MAX_CONCURRENT_JOBS = 10;
+  var jobQueue = [];
+  var activeJobs = 0;
+
+  function enqueueJob(task) {
+    return new Promise(function (resolve) {
+      jobQueue.push({ task: task, resolve: resolve });
+      pumpQueue();
+    });
+  }
+
+  function pumpQueue() {
+    while (activeJobs < MAX_CONCURRENT_JOBS && jobQueue.length) {
+      runJob(jobQueue.shift());
+    }
+  }
+
+  function runJob(job) {
+    activeJobs++;
+    new Promise(function (resolve) { requestAnimationFrame(resolve); })
+      .then(job.task)
+      .then(function (result) {
+        activeJobs--;
+        job.resolve(result);
+        pumpQueue();
+      }, function () {
+        activeJobs--;
+        job.resolve();
+        pumpQueue();
+      });
+  }
+
+  // Each media kind that shells out to a local engine (ffmpeg for video/
+  // audio, pandoc for documents) gets its own queue — keeping them separate
+  // per kind is what lets video/audio/documents/images all run truly in
+  // parallel with each other instead of waiting on one shared line.
+  function makeQueue(concurrency) {
+    var queue = [];
+    var active = 0;
+    function pump() {
+      while (active < concurrency && queue.length) {
+        active++;
+        var job = queue.shift();
+        Promise.resolve().then(job.task).then(function (result) {
+          active--;
+          job.resolve(result);
+          pump();
+        }, function () {
+          active--;
+          job.resolve();
+          pump();
+        });
+      }
+    }
+    return {
+      enqueue: function (task) {
+        return new Promise(function (resolve) {
+          queue.push({ task: task, resolve: resolve });
+          pump();
+        });
+      }
+    };
+  }
+  // Modern GeForce drivers (2021+) dropped the old 2-session NVENC cap, so
+  // a couple of videos can genuinely encode on the GPU at once — this only
+  // helps when there are multiple files queued, not a single huge one.
+  // Audio/documents are already fast enough that parallelizing them further
+  // wouldn't be noticeable, so those stay strictly sequential.
+  var videoQueue = makeQueue(2);
+  var audioQueue = makeQueue(1);
+  var documentQueue = makeQueue(1);
+  var pdfQueue = makeQueue(1);
+  function enqueueVideoJob(task) { return videoQueue.enqueue(task); }
+  function enqueueAudioJob(task) { return audioQueue.enqueue(task); }
+  function enqueueDocumentJob(task) { return documentQueue.enqueue(task); }
+  function enqueuePdfJob(task) { return pdfQueue.enqueue(task); }
+
+  // Runs ffmpeg/pandoc locally via Electron's main process (see main.js) —
+  // files are processed straight off disk, no upload, no server, no memory
+  // ceiling beyond what this machine actually has.
+  var MAX_VIDEO_INPUT_BYTES = 100 * 1024 * 1024 * 1024;
+  var jobProgressCallbacks = {};
+
+  if (window.desktopAPI) {
+    window.desktopAPI.onJobProgress(function (data) {
+      var cb = jobProgressCallbacks[data.jobId];
+      if (cb) cb(data.progress);
+    });
+  }
+
+  function currentVideoSettings() {
+    return {
+      format: videoFormatSelect.value,
+      quality: parseInt(videoQualitySlider.value, 10),
+      noRecode: videoNoRecodeToggle.checked,
+      audioOnly: videoAudioOnlyToggle.checked,
+      trimStart: videoTrimStartInput.value ? parseFloat(videoTrimStartInput.value) : null,
+      trimEnd: videoTrimEndInput.value ? parseFloat(videoTrimEndInput.value) : null
+    };
+  }
+
+  async function convertVideoItem(item, settings) {
+    item.status = "processing";
+    item.stage = "processing";
+    item.progress = 0;
+    renderRow(item);
+
+    if (item.file.size > MAX_VIDEO_INPUT_BYTES) {
+      item.status = "error";
+      item.error = "Файл больше 100 ГБ";
+      item.stage = null;
+      renderRow(item);
+      updateSummary();
+      return;
+    }
+
+    var jobId = "job_" + item.id + "_" + Date.now();
+    try {
+      var inputPath = window.desktopAPI.getFilePath(item.file);
+      jobProgressCallbacks[jobId] = function (pct) {
+        item.progress = pct;
+        renderRow(item);
+      };
+
+      var result = await window.desktopAPI.convertVideo({
+        inputPath: inputPath,
+        format: settings.format,
+        quality: settings.quality,
+        noRecode: settings.noRecode,
+        audioOnly: settings.audioOnly,
+        trimStart: settings.trimStart,
+        trimEnd: settings.trimEnd,
+        jobId: jobId
+      });
+
+      item.outputPath = result.outputPath;
+      item.outputMime = result.mimeType;
+      item.outputSize = result.size;
+      item.outputFormat = settings.audioOnly ? "mp3" : settings.format;
+      item.lastVideoSettingsKey = JSON.stringify(settings);
+      item.status = "done";
+      item.stage = null;
+      item.progress = 100;
+      renderRow(item);
+      updateSummary();
+    } catch (e) {
+      console.error("Video conversion failed:", e);
+      item.status = "error";
+      item.error = "Не удалось сконвертировать видео: " + (e && e.message ? e.message.slice(0, 200) : "");
+      item.stage = null;
+      renderRow(item);
+      updateSummary();
+    } finally {
+      delete jobProgressCallbacks[jobId];
+    }
+  }
+
+  function currentAudioSettings() {
+    return {
+      format: audioFormatSelect.value,
+      quality: parseInt(audioQualitySlider.value, 10),
+      trimSilence: audioTrimSilenceToggle.checked,
+      normalize: audioNormalizeToggle.checked
+    };
+  }
+
+  async function convertAudioItem(item, settings) {
+    item.status = "processing";
+    item.stage = "processing";
+    item.progress = 0;
+    renderRow(item);
+
+    var jobId = "job_" + item.id + "_" + Date.now();
+    try {
+      var inputPath = window.desktopAPI.getFilePath(item.file);
+      jobProgressCallbacks[jobId] = function (pct) {
+        item.progress = pct;
+        renderRow(item);
+      };
+
+      var result = await window.desktopAPI.convertAudio({
+        inputPath: inputPath,
+        format: settings.format,
+        quality: settings.quality,
+        trimSilence: settings.trimSilence,
+        normalize: settings.normalize,
+        jobId: jobId
+      });
+
+      item.outputPath = result.outputPath;
+      item.outputMime = result.mimeType;
+      item.outputSize = result.size;
+      item.outputFormat = settings.format;
+      item.lastAudioSettingsKey = JSON.stringify(settings);
+      item.status = "done";
+      item.stage = null;
+      item.progress = 100;
+      renderRow(item);
+      updateSummary();
+    } catch (e) {
+      console.error("Audio conversion failed:", e);
+      item.status = "error";
+      item.error = "Не удалось сконвертировать аудио: " + (e && e.message ? e.message.slice(0, 200) : "");
+      item.stage = null;
+      renderRow(item);
+      updateSummary();
+    } finally {
+      delete jobProgressCallbacks[jobId];
+    }
+  }
+
+  function currentDocumentSettings() {
+    return { format: documentFormatSelect.value };
+  }
+
+  async function convertDocumentItem(item, settings) {
+    item.status = "processing";
+    renderRow(item);
+
+    try {
+      var inputPath = window.desktopAPI.getFilePath(item.file);
+      var jobId = "job_" + item.id + "_" + Date.now();
+
+      var result = await window.desktopAPI.convertDocument({
+        inputPath: inputPath,
+        format: settings.format,
+        jobId: jobId
+      });
+
+      item.outputPath = result.outputPath;
+      item.outputMime = result.mimeType;
+      item.outputSize = result.size;
+      item.outputFormat = settings.format;
+      item.lastDocumentSettingsKey = JSON.stringify(settings);
+      item.status = "done";
+      renderRow(item);
+      updateSummary();
+    } catch (e) {
+      console.error("Document conversion failed:", e);
+      item.status = "error";
+      item.error = "Не удалось сконвертировать документ: " + (e && e.message ? e.message.slice(0, 200) : "");
+      renderRow(item);
+      updateSummary();
+    }
+  }
+
+  // Mirrors main.js's own PDF_PRESETS — kept as two small copies rather than
+  // a shared module, same as every other constant table in this app (main
+  // process and renderer already don't share code, e.g. MIME_BY_FORMAT).
+  var PDF_PRESETS = {
+    screen: { quality: 40, dpi: 72 },
+    ebook: { quality: 60, dpi: 150 },
+    printer: { quality: 80, dpi: 300 },
+    prepress: { quality: 90, dpi: 300 }
+  };
+
+  function pdfErrorMessage(code) {
+    if (code === "encrypted") return "PDF защищён паролем";
+    if (code === "corrupted") return "Файл повреждён";
+    if (code === "unsupported") return "Формат не поддерживается";
+    return "Не удалось прочитать файл";
+  }
+
+  function currentPdfSettings() {
+    var mode = pdfModeSelect.value;
+    var preset = PDF_PRESETS[mode];
+    var quality = preset ? preset.quality : (parseInt(pdfQualityValue.value, 10) || 60);
+    var dpi;
+    if (preset) {
+      dpi = preset.dpi;
+    } else if (pdfDpiSelect.value === "custom") {
+      dpi = parseInt(pdfCustomDpiInput.value, 10) || null;
+    } else if (pdfDpiSelect.value === "") {
+      dpi = null;
+    } else {
+      dpi = parseInt(pdfDpiSelect.value, 10);
+    }
+    return {
+      mode: mode,
+      quality: quality,
+      dpi: dpi,
+      imageFormat: preset ? "jpeg" : pdfImageFormatSelect.value,
+      optimizeImages: pdfOptimizeImagesToggle.checked,
+      compressStreams: pdfCompressStreamsToggle.checked,
+      optimizeFonts: pdfOptimizeFontsToggle.checked,
+      fastWebView: pdfFastWebViewToggle.checked,
+      stripMetadata: pdfStripMetadataToggle.checked,
+      stripHidden: pdfStripHiddenToggle.checked
+    };
+  }
+
+  // Bytes-per-pixel curve for JPEG at a given quality. Anchors measured
+  // against this app's own Ghostscript pipeline rather than guessed, so the
+  // estimate tracks what the engine actually produces. Still an estimate —
+  // real bytes swing with image content — hence the range in the UI.
+  function jpegBytesPerPixel(quality) {
+    var points = [[10, 0.035], [40, 0.053], [60, 0.065], [80, 0.085], [90, 0.11], [100, 0.16]];
+    for (var i = 0; i < points.length - 1; i++) {
+      if (quality <= points[i + 1][0]) {
+        var a = points[i], b = points[i + 1];
+        var t = (quality - a[0]) / (b[0] - a[0]);
+        return a[1] + t * (b[1] - a[1]);
+      }
+    }
+    return points[points.length - 1][1];
+  }
+
+  function estimatePdfItemSize(item, settings) {
+    var info = item.pdfInfo;
+    if (!info) return null;
+    var imageBytesTotal = info.images.reduce(function (s, im) { return s + im.bytes; }, 0);
+    var nonImageBytes = Math.max(0, info.totalBytes - imageBytesTotal);
+    var imageEstimate;
+    if (settings.optimizeImages) {
+      var bpp = jpegBytesPerPixel(settings.quality);
+      imageEstimate = info.images.reduce(function (sum, im) {
+        // 150dpi assumed as a typical source resolution baseline when no
+        // real source DPI is known — only used to scale the downsample
+        // ratio, not as a claim about the actual source file.
+        var scale = settings.dpi ? Math.min(1, settings.dpi / 150) : 1;
+        var px = im.width * im.height * scale * scale;
+        // Deliberately not capped at the image's current size: re-encoding
+        // at a higher quality than the source was stored at genuinely does
+        // grow the file, and the estimate has to be able to say so.
+        return sum + px * bpp;
+      }, 0);
+    } else {
+      imageEstimate = imageBytesTotal;
+    }
+    var streamFactor = settings.compressStreams ? 0.85 : 1;
+    return nonImageBytes * streamFactor + imageEstimate;
+  }
+
+  function pdfQualityLossLabel(quality) {
+    if (quality >= 75) return "Минимальная";
+    if (quality >= 40) return "Средняя";
+    return "Высокая";
+  }
+
+  function updatePdfEstimateUI() {
+    var settings = currentPdfSettings();
+    var pdfItems = items.filter(function (it) { return it.kind === "pdf" && it.pdfInfo; });
+    if (!pdfItems.length) {
+      pdfEstimateOriginal.textContent = "—";
+      pdfEstimateResult.textContent = "—";
+      pdfEstimateSavings.textContent = "—";
+      pdfEstimateQuality.textContent = "—";
+      return;
+    }
+    var originalTotal = 0, estTotal = 0;
+    pdfItems.forEach(function (item) {
+      originalTotal += item.originalSize;
+      estTotal += estimatePdfItemSize(item, settings) || item.originalSize;
+    });
+    var low = estTotal * 0.85, high = estTotal * 1.15;
+    pdfEstimateOriginal.textContent = formatBytes(originalTotal);
+    pdfEstimateResult.textContent = formatBytes(low) + " – " + formatBytes(high);
+    var savingsPct = originalTotal > 0 ? Math.round((1 - estTotal / originalTotal) * 100) : 0;
+    pdfEstimateSavings.textContent = (savingsPct >= 0 ? "~" : "") + savingsPct + "%";
+    pdfEstimateQuality.textContent = pdfQualityLossLabel(settings.quality);
+  }
+
+  function updatePdfPanelState() {
+    var mode = pdfModeSelect.value;
+    var isCustom = mode === "custom";
+    var preset = PDF_PRESETS[mode];
+    if (preset) {
+      pdfQualityValue.value = preset.quality;
+      pdfQualitySlider.value = preset.quality;
+    }
+    pdfQualityField.classList.toggle("enabled", isCustom);
+    pdfDpiField.classList.toggle("enabled", isCustom);
+    pdfImageFormatField.classList.toggle("enabled", isCustom);
+    pdfCustomDpiField.style.display = (isCustom && pdfDpiSelect.value === "custom") ? "" : "none";
+    updatePdfEstimateUI();
+  }
+
+  async function convertPdfItem(item, settings) {
+    item.status = "processing";
+    renderRow(item);
+    var jobId = "job_" + item.id + "_" + Date.now();
+    try {
+      var inputPath = window.desktopAPI.getFilePath(item.file);
+      jobProgressCallbacks[jobId] = function (pct) {
+        item.progress = pct;
+        item.stage = "Сжатие PDF";
+        renderRow(item);
+      };
+
+      var result = await window.desktopAPI.compressPdf({
+        inputPath: inputPath,
+        settings: settings,
+        jobId: jobId,
+        pageCount: item.pageCount || 0
+      });
+
+      item.outputPath = result.outputPath;
+      item.outputMime = result.mimeType;
+      item.outputSize = result.size;
+      item.outputFormat = "pdf";
+      item.lastPdfSettingsKey = JSON.stringify(settings);
+      item.status = "done";
+      item.stage = null;
+      item.progress = 100;
+      renderRow(item);
+      updateSummary();
+      if (result.keptOriginal) {
+        showToast(item.name + ": сжатие увеличило бы файл — сохранён оригинал");
+      }
+    } catch (e) {
+      console.error("PDF compression failed:", e);
+      item.status = "error";
+      var msg = e && e.message ? e.message.replace(/^Error invoking remote method '[^']*':\s*(Error:\s*)?/, "") : "";
+      item.error = msg.slice(0, 200) || "Не удалось выполнить сжатие";
+      item.stage = null;
+      renderRow(item);
+      updateSummary();
+    } finally {
+      delete jobProgressCallbacks[jobId];
+    }
+  }
+
+  var VIDEO_EXTENSIONS = ["mp4", "mov", "avi", "mkv", "webm", "m4v", "wmv", "flv", "3gp"];
+  function isVideoFile(f) {
+    if (f.type.indexOf("video/") === 0) return true;
+    var ext = f.name.split(".").pop().toLowerCase();
+    return VIDEO_EXTENSIONS.indexOf(ext) !== -1;
+  }
+
+  var AUDIO_EXTENSIONS = ["mp3", "wav", "flac", "aac", "ogg", "m4a", "wma", "opus", "aiff"];
+  function isAudioFile(f) {
+    if (f.type.indexOf("audio/") === 0) return true;
+    var ext = f.name.split(".").pop().toLowerCase();
+    return AUDIO_EXTENSIONS.indexOf(ext) !== -1;
+  }
+
+  var DOCUMENT_EXTENSIONS = ["docx", "odt", "rtf", "md", "html", "htm"];
+  function isDocumentFile(f) {
+    var ext = f.name.split(".").pop().toLowerCase();
+    return DOCUMENT_EXTENSIONS.indexOf(ext) !== -1;
+  }
+
+  function isPdfFile(f) {
+    if (f.type === "application/pdf") return true;
+    return f.name.split(".").pop().toLowerCase() === "pdf";
+  }
+
+  function kindOf(f) {
+    if (isVideoFile(f)) return "video";
+    if (isAudioFile(f)) return "audio";
+    if (isPdfFile(f)) return "pdf";
+    if (isDocumentFile(f)) return "document";
+    if (f.type.indexOf("image/") === 0) return "image";
+    return null;
+  }
+
+  // Each panel only concerns its own file kind — showing image settings
+  // when only video/audio/documents were dropped (or vice versa) is just
+  // confusing, since none of those controls would apply.
+  var KIND_PANELS = { image: controlsPanel, video: videoControlsPanel, audio: audioControlsPanel, document: documentControlsPanel, pdf: pdfControlsPanel };
+  function updatePanelVisibility() {
+    ["image", "video", "audio", "document", "pdf"].forEach(function (kind) {
+      var has = items.some(function (it) { return (it.kind || "image") === kind; });
+      KIND_PANELS[kind].classList.toggle("visible", has);
+    });
+  }
+
+  function addFiles(fileList) {
+    var files = Array.prototype.slice.call(fileList).filter(function (f) {
+      return kindOf(f) !== null;
+    });
+    if (!files.length) return;
+
+    files.forEach(function (file) {
+      var kind = kindOf(file);
+      var item = {
+        id: nextId++,
+        file: file,
+        name: file.name,
+        kind: kind,
+        originalSize: file.size,
+        width: 0,
+        height: 0,
+        thumbSrc: "",
+        status: "pending",
+        outputBlob: null,
+        outputSize: 0,
+        error: ""
+      };
+      items.push(item);
+
+      if (kind === "video") {
+        // A real frame from partway through the video reads much better
+        // than a generic icon — ffmpeg can grab one almost for free.
+        var vPath = window.desktopAPI.getFilePath(file);
+        window.desktopAPI.extractVideoThumbnail(vPath).then(function (result) {
+          if (result.buffer) {
+            item.thumbSrc = URL.createObjectURL(new Blob([result.buffer], { type: "image/jpeg" }));
+            renderRow(item);
+          }
+        });
+        return;
+      }
+      if (kind === "pdf") {
+        // Pre-flight read: page count, embedded-image sizes for the live
+        // estimate, and password/corruption detection — before the user
+        // even opens the PDF panel, same timing as the video thumbnail above.
+        var pPath = window.desktopAPI.getFilePath(file);
+        window.desktopAPI.inspectPdf(pPath).then(function (result) {
+          if (result.error) {
+            item.status = "error";
+            item.error = pdfErrorMessage(result.error);
+          } else {
+            item.pageCount = result.pageCount;
+            item.imageCount = result.imageCount;
+            item.pdfInfo = { images: result.images, totalBytes: result.totalBytes };
+          }
+          renderRow(item);
+          updatePdfEstimateUI();
+        });
+        return;
+      }
+      if (kind === "audio" || kind === "document") return;
+
+      // Only reads the file to show dimensions/thumbnail — actual
+      // conversion waits for "Применить", same as video.
+      enqueueJob(function () {
+        return createImageBitmap(file).then(function (bitmap) {
+          item.width = bitmap.width;
+          item.height = bitmap.height;
+          makeThumb(bitmap, function (dataUrl) {
+            item.thumbSrc = dataUrl;
+            renderRow(item);
+          });
+          bitmap.close && bitmap.close();
+        }).catch(function () {
+          item.status = "error";
+          item.error = "Не удалось прочитать файл";
+          renderRow(item);
+        });
+      });
+    });
+
+    // One full render for the whole dropped batch instead of one per file —
+    // re-rendering every existing row on each push was O(n²) DOM work for
+    // a big batch, which is what made the page feel stuck while adding.
+    renderAll();
+    updatePanelVisibility();
+    tableSection.classList.add("visible");
+    summaryBar.classList.add("visible");
+  }
+
+  function encodeCanvas(canvas, mime, quality) {
+    return new Promise(function (resolve) {
+      canvas.toBlob(resolve, mime, quality);
+    });
+  }
+
+  // Canvas has no BMP encoder (toBlob never supported "image/bmp"), so this
+  // is a small hand-rolled one — BMP is simple enough (uncompressed 24-bit,
+  // bottom-up rows padded to 4 bytes) that it's not worth a dependency for.
+  function encodeBMP(canvas) {
+    var ctx = canvas.getContext("2d");
+    var w = canvas.width, h = canvas.height;
+    var imgData = ctx.getImageData(0, 0, w, h).data;
+    var rowSize = Math.floor((w * 3 + 3) / 4) * 4;
+    var pixelArraySize = rowSize * h;
+    var fileSize = 54 + pixelArraySize;
+    var buffer = new ArrayBuffer(fileSize);
+    var view = new DataView(buffer);
+
+    view.setUint8(0, 0x42); view.setUint8(1, 0x4D);
+    view.setUint32(2, fileSize, true);
+    view.setUint32(6, 0, true);
+    view.setUint32(10, 54, true);
+
+    view.setUint32(14, 40, true);
+    view.setInt32(18, w, true);
+    view.setInt32(22, h, true);
+    view.setUint16(26, 1, true);
+    view.setUint16(28, 24, true);
+    view.setUint32(30, 0, true);
+    view.setUint32(34, pixelArraySize, true);
+    view.setInt32(38, 2835, true);
+    view.setInt32(42, 2835, true);
+    view.setUint32(46, 0, true);
+    view.setUint32(50, 0, true);
+
+    var offset = 54;
+    var padding = rowSize - w * 3;
+    for (var y = h - 1; y >= 0; y--) {
+      for (var x = 0; x < w; x++) {
+        var i = (y * w + x) * 4;
+        view.setUint8(offset++, imgData[i + 2]);
+        view.setUint8(offset++, imgData[i + 1]);
+        view.setUint8(offset++, imgData[i]);
+      }
+      for (var p = 0; p < padding; p++) view.setUint8(offset++, 0);
+    }
+    return Promise.resolve(new Blob([buffer], { type: "image/bmp" }));
+  }
+
+  // GIF has no Canvas encoder at all — routed through ffmpeg (via the main
+  // process) instead: export as PNG first (canvas always supports that),
+  // hand the bytes off, get a palette-optimized GIF back.
+  async function encodeGIF(canvas) {
+    var pngBlob = await encodeCanvas(canvas, "image/png");
+    if (!pngBlob) return null;
+    var buffer = await pngBlob.arrayBuffer();
+    var jobId = "gif_" + Date.now() + "_" + Math.random().toString(36).slice(2);
+    try {
+      var result = await window.desktopAPI.convertImageGif({ buffer: buffer, jobId: jobId });
+      return new Blob([result.buffer], { type: "image/gif" });
+    } catch (e) {
+      console.error("GIF conversion failed:", e);
+      return null;
+    }
+  }
+
+  function encodeCanvasFormat(canvas, format, quality) {
+    if (format === "bmp") return encodeBMP(canvas);
+    if (format === "gif") return encodeGIF(canvas);
+    return encodeCanvas(canvas, FORMAT_MIME[format], format === "png" ? undefined : quality);
+  }
+
+  /* A full-resolution WebP encode is the expensive step in the quality
+     search below — on a 4K photo it can take real time, and a blind
+     binary search needs ~7 of them. Encoding the same search on a small
+     downscaled proxy first is close to instant, and gives a starting
+     quality that's usually already near the real answer, so only a
+     couple of full-resolution passes are needed to confirm/refine it. */
+  async function estimateQualityFromProxy(canvas, mime, ceiling, targetBytes) {
+    var maxProxyDim = 640;
+    var longSide = Math.max(canvas.width, canvas.height);
+    if (longSide <= maxProxyDim) return Math.floor(ceiling / 2);
+
+    var scale = maxProxyDim / longSide;
+    var pw = Math.max(1, Math.round(canvas.width * scale));
+    var ph = Math.max(1, Math.round(canvas.height * scale));
+    var proxy = document.createElement("canvas");
+    proxy.width = pw;
+    proxy.height = ph;
+    proxy.getContext("2d").drawImage(canvas, 0, 0, pw, ph);
+
+    var pixelRatio = (canvas.width * canvas.height) / (pw * ph);
+    var proxyTarget = targetBytes / pixelRatio;
+
+    var lo = 1, hi = ceiling, best = Math.floor(ceiling / 2);
+    var steps = 6;
+    while (lo <= hi && steps > 0) {
+      var mid = Math.floor((lo + hi) / 2);
+      var blob = await encodeCanvas(proxy, mime, mid / 100);
+      if (blob && blob.size <= proxyTarget) {
+        best = mid;
+        lo = mid + 1;
+      } else {
+        hi = mid - 1;
+      }
+      steps--;
+    }
+    return best;
+  }
+
+  /* Binary search for the highest quality (1..ceilingQuality) whose
+     encoded size still fits under targetBytes. Returns {blob:null} if
+     even quality 1 doesn't fit at this canvas' current resolution. */
+  async function findBestQuality(canvas, mime, ceilingQuality, targetBytes) {
+    var hi = Math.max(1, Math.min(100, ceilingQuality));
+    var minAcceptable = targetBytes * 0.9;
+    var lo = 1;
+    var bestBlob = null;
+    var bestQuality = 0;
+
+    // The proxy guess is near-free (small canvas). A full-resolution
+    // encode at max quality is the single most expensive call here, so
+    // only pay for it when the proxy thinks it's actually likely to fit —
+    // in the common case (big photo, small target) it never would.
+    var guess = await estimateQualityFromProxy(canvas, mime, hi, targetBytes);
+    if (guess >= hi - 1) {
+      var atCeiling = await encodeCanvas(canvas, mime, hi / 100);
+      if (atCeiling && atCeiling.size <= targetBytes) {
+        return { blob: atCeiling, quality: hi };
+      }
+      hi = hi - 1;
+    }
+
+    if (guess > lo && guess <= hi) {
+      var guessBlob = await encodeCanvas(canvas, mime, guess / 100);
+      if (guessBlob && guessBlob.size <= targetBytes) {
+        bestBlob = guessBlob;
+        bestQuality = guess;
+        lo = guess + 1;
+        if (guessBlob.size >= minAcceptable) {
+          return { blob: bestBlob, quality: bestQuality };
+        }
+      } else {
+        hi = guess - 1;
+      }
+    }
+
+    // Keep bisecting until the result lands inside the accepted band
+    // (targetBytes*0.9 .. targetBytes) or the search fully converges. The
+    // proxy guess usually lands close, so this is normally only a couple
+    // more passes — but it's not capped, because a guaranteed close fit
+    // matters more than saving one extra encode on the rare miss.
+    while (lo <= hi) {
+      var mid = Math.floor((lo + hi) / 2);
+      var blob = await encodeCanvas(canvas, mime, mid / 100);
+      if (blob && blob.size <= targetBytes) {
+        bestBlob = blob;
+        bestQuality = mid;
+        lo = mid + 1;
+        if (blob.size >= minAcceptable) break;
+      } else {
+        hi = mid - 1;
+      }
+    }
+    return { blob: bestBlob, quality: bestQuality };
+  }
+
+  /* Finds the best quality that fits targetBytes at the given resolution;
+     if even the lowest quality is still too heavy, shrinks the resolution
+     and tries again, down to a floor, so the file is guaranteed to keep
+     shrinking toward the limit rather than getting stuck oversized. */
+  async function smartCompress(bitmap, format, startWidth, startHeight, ceilingQuality, targetBytes, resizeMethod, palette) {
+    var srcW = bitmap.width, srcH = bitmap.height;
+    var width = startWidth, height = startHeight;
+    var minDim = 200;
+    var maxAttempts = 8;
+    var attempt = 0;
+    var mime = FORMAT_MIME[format];
+    var lossless = !!LOSSLESS_IMAGE_FORMATS[format];
+
+    while (true) {
+      var canvas = await drawResized(bitmap, srcW, srcH, width, height, resizeMethod);
+      if (palette.enabled) quantizeCanvas(canvas, palette.colors, palette.dither);
+
+      if (lossless) {
+        // PNG/GIF/BMP have no quality knob — the only lever left is
+        // resolution, so just check whether this size already fits.
+        var losslessBlob = await encodeCanvasFormat(canvas, format);
+        var fits = losslessBlob && losslessBlob.size <= targetBytes;
+        if (fits || Math.max(width, height) <= minDim || attempt >= maxAttempts) {
+          return { blob: losslessBlob, width: width, height: height, quality: null, hitFloor: !fits };
+        }
+      } else {
+        var found = await findBestQuality(canvas, mime, ceilingQuality, targetBytes);
+        if (found.blob) {
+          return { blob: found.blob, width: width, height: height, quality: found.quality, hitFloor: false };
+        }
+        if (Math.max(width, height) <= minDim || attempt >= maxAttempts) {
+          var fallback = await encodeCanvas(canvas, mime, 0.01);
+          return { blob: fallback, width: width, height: height, quality: 1, hitFloor: true };
+        }
+      }
+
+      width = Math.max(minDim, Math.round(width * 0.85));
+      height = Math.max(minDim, Math.round(height * 0.85));
+      attempt++;
+    }
+  }
+
+  async function convertItem(item, settings) {
+    var gen = (item.convertGen = (item.convertGen || 0) + 1);
+    item.status = "processing";
+    renderRow(item);
+    // A re-conversion on a big photo (multiple full-res encode passes for
+    // smart compression) can take a while — without this, the single-editor
+    // sidebar keeps showing the *previous* result the whole time, making it
+    // look like changing a setting (e.g. the size limit) did nothing.
+    if (compareCurrentItem === item) {
+      compareOutDims.textContent = "…";
+      compareOutSize.textContent = "Обработка…";
+    }
+
+    try {
+      var bitmap = await createImageBitmap(item.file);
+      var srcW = bitmap.width, srcH = bitmap.height;
+      var width = srcW, height = srcH;
+      if (settings.resize) {
+        var target = resolveResizeTarget(width, height, settings);
+        var dims = computeResizeDimensions(width, height, target.targetW, target.targetH, settings.maintainAspect);
+        width = dims.width;
+        height = dims.height;
+      }
+
+      var mime = FORMAT_MIME[settings.format];
+      var palette = { enabled: !!settings.palette, colors: settings.paletteColors, dither: settings.dither };
+      var blob, finalWidth = width, finalHeight = height, finalQuality = settings.quality, hitFloor = false;
+      var outputFormat = settings.format;
+      var dimensionsUnchanged = width === srcW && height === srcH;
+
+      if (settings.targetBytes && dimensionsUnchanged && item.originalSize <= settings.targetBytes) {
+        // Already under the limit and no resize actually changes anything —
+        // re-encoding "up to" the limit isn't guaranteed to shrink it
+        // (recompression can easily come out bigger than the original), so
+        // just keep the file exactly as it was instead of inflating it.
+        blob = item.file;
+        finalQuality = null;
+        outputFormat = sourceFormatId(item);
+      } else if (settings.targetBytes) {
+        // Smart mode always searches the full 1–100 range — the quality
+        // slider is not a ceiling here, so raising the size limit can
+        // actually raise quality instead of silently doing nothing. But the
+        // ceiling it searches up to is still capped at the original file's
+        // own size — even when a resize shrinks the pixel dimensions, there's
+        // no reason to spend the *whole* size budget just because a smaller
+        // image happens to fit comfortably at max quality (that's how the
+        // earlier "51.jpg 105KB -> 148KB" bug happened: resize shrank it,
+        // but 100% quality at the new size still fit under a much bigger
+        // target, so it used all of it instead of just what was needed).
+        var effectiveTarget = Math.min(settings.targetBytes, item.originalSize);
+        var result = await smartCompress(bitmap, settings.format, width, height, 100, effectiveTarget, settings.resizeMethod, palette);
+        blob = result.blob;
+        finalWidth = result.width;
+        finalHeight = result.height;
+        finalQuality = result.quality;
+        hitFloor = result.hitFloor;
+      } else {
+        var canvas = await drawResized(bitmap, bitmap.width, bitmap.height, width, height, settings.resizeMethod);
+        if (palette.enabled) quantizeCanvas(canvas, palette.colors, palette.dither);
+        var q = LOSSLESS_IMAGE_FORMATS[settings.format] ? undefined : settings.quality / 100;
+        blob = await encodeCanvasFormat(canvas, settings.format, q);
+      }
+
+      bitmap.close && bitmap.close();
+
+      if (item.convertGen !== gen) return; // a newer conversion superseded this one
+
+      if (!blob) {
+        item.status = "error";
+        item.error = settings.format === "avif" ? "AVIF не поддерживается в этой версии" : "Конвертация не удалась";
+        renderRow(item);
+        updateSummary();
+        return;
+      }
+
+      item.outputBlob = blob;
+      item.outputSize = blob.size;
+      item.outputWidth = finalWidth;
+      item.outputHeight = finalHeight;
+      item.outputFormat = outputFormat;
+      item.outputQuality = finalQuality;
+      item.hitSizeFloor = hitFloor;
+      item.status = "done";
+      item.lastSettingsKey = settingsKey(settings);
+      renderRow(item);
+      updateSummary();
+      if (compareCurrentItem === item) refreshCompareAfterImage(item);
+      if (hitFloor) {
+        showToast(item.name + ": не удалось уложиться в лимит (" + formatBytes(item.outputSize) + ")");
+      }
+    } catch (e) {
+      if (item.convertGen !== gen) return;
+      item.status = "error";
+      item.error = "Конвертация не удалась";
+      renderRow(item);
+      updateSummary();
+    }
+  }
+
+  function settingsKey(settings) {
+    return JSON.stringify(settings);
+  }
+
+  function convertAll(onProgress) {
+    var settings = currentSettings();
+    var key = settingsKey(settings);
+    // Skip anything already converted with these exact settings — otherwise
+    // a finished batch restarts from scratch on every unrelated tweak (or
+    // every keystroke while typing a target size), which is slow now that
+    // processing is strictly one file at a time.
+    // Video/audio/document items each have their own settings panel and
+    // Apply button — this one only concerns image files.
+    var pending = items.filter(function (item) {
+      return item.kind === "image" && item.lastSettingsKey !== key;
+    });
+    var total = pending.length;
+    var done = 0;
+    if (!total) return Promise.resolve();
+    var promises = pending.map(function (item) {
+      return enqueueJob(function () {
+        return convertItem(item, settings);
+      }).then(function () {
+        done++;
+        if (onProgress) onProgress(done, total);
+      });
+    });
+    return Promise.all(promises);
+  }
+
+  function removeItem(id) {
+    items = items.filter(function (it) { return it.id !== id; });
+    renderAll();
+    updateSummary();
+    updatePanelVisibility();
+    if (!items.length) {
+      tableSection.classList.remove("visible");
+      summaryBar.classList.remove("visible");
+    }
+  }
+
+  // Windows forbids these in filenames; strip them so a pasted/typed suffix
+  // can't produce a path save-to-folder or the save dialog would reject.
+  function sanitizedFileSuffix() {
+    return fileSuffixInput.value.trim().replace(/[<>:"/\\|?*\x00-\x1f]/g, "");
+  }
+
+  function outputFileName(item, usedNames) {
+    var ext = FORMAT_EXT[item.outputFormat] || FORMAT_EXT[currentSettings().format] || "jpg";
+    var base = item.name.replace(/\.[^.]+$/, "") + sanitizedFileSuffix();
+    var name = base + "." + ext;
+    var i = 2;
+    while (usedNames[name]) {
+      name = base + " (" + i + ")." + ext;
+      i++;
+    }
+    usedNames[name] = true;
+    return name;
+  }
+
+  function renderRow(item) {
+    var tr = document.getElementById("row-" + item.id);
+    if (!tr) return;
+
+    var dimsText = item.width ? item.width + "×" + item.height : "";
+    if (!dimsText && item.kind === "pdf" && item.pageCount) {
+      dimsText = item.pageCount + " стр." + (item.imageCount ? " · " + item.imageCount + " изобр." : "");
+    }
+    var thumbImg = tr.querySelector(".thumb");
+    if (item.thumbSrc) {
+      thumbImg.src = item.thumbSrc;
+      thumbImg.classList.remove("thumb-empty");
+    } else {
+      thumbImg.removeAttribute("src");
+      thumbImg.classList.add("thumb-empty");
+    }
+    tr.querySelector(".name").textContent = item.name;
+    tr.querySelector(".dims").textContent = dimsText;
+    tr.querySelector(".original-size").textContent = formatBytes(item.originalSize);
+
+    var resultCell = tr.querySelector(".result-size");
+    var savingsCell = tr.querySelector(".savings-cell");
+
+    if (item.status === "pending" || item.status === "processing") {
+      resultCell.textContent = "…";
+      if ((item.kind === "video" || item.kind === "audio" || item.kind === "pdf") && item.status === "processing" && item.stage) {
+        var stageLabel = "Обработка";
+        var vpct = Math.max(0, Math.min(100, item.progress || 0));
+        savingsCell.innerHTML =
+          '<div class="mini-progress-wrap">' +
+            '<div class="mini-progress"><div class="mini-progress-fill" style="width:' + vpct + '%"></div></div>' +
+            '<span class="mini-progress-label">' + stageLabel + ' ' + vpct + '%</span>' +
+          '</div>';
+      } else {
+        savingsCell.innerHTML = '<span class="chip pending">обработка</span>';
+      }
+    } else if (item.status === "error") {
+      resultCell.textContent = "—";
+      savingsCell.innerHTML = '<span class="chip bad" title="' + (item.error || "") + '">ошибка</span>';
+    } else {
+      resultCell.textContent = formatBytes(item.outputSize);
+      var diff = item.originalSize - item.outputSize;
+      var pct = item.originalSize > 0 ? Math.round((diff / item.originalSize) * 100) : 0;
+      var cls = pct >= 0 ? "good" : "bad";
+      var sign = pct >= 0 ? "-" : "+";
+      var warn = item.hitSizeFloor ? ' <span class="chip bad" title="Не удалось уложиться в лимит веса">⚠ лимит</span>' : "";
+      savingsCell.innerHTML = '<span class="chip ' + cls + '">' + sign + Math.abs(pct) + "%</span>" + warn;
+    }
+
+    var downloadBtn = tr.querySelector(".dl-btn");
+    downloadBtn.disabled = item.status !== "done";
+    var cmpBtn = tr.querySelector(".cmp-btn");
+    var isNonImage = item.kind !== "image";
+    cmpBtn.disabled = item.status !== "done" || isNonImage;
+    cmpBtn.style.display = isNonImage ? "none" : "";
+
+    thumbImg.classList.toggle("thumb-video", item.kind === "video" && !item.thumbSrc);
+    thumbImg.classList.toggle("thumb-audio", item.kind === "audio" && !item.thumbSrc);
+    thumbImg.classList.toggle("thumb-document", (item.kind === "document" || item.kind === "pdf") && !item.thumbSrc);
+  }
+
+  function renderAll() {
+    var existingIds = {};
+    Array.prototype.forEach.call(fileRows.children, function (tr) {
+      existingIds[tr.id] = tr;
+    });
+
+    items.forEach(function (item) {
+      var rowId = "row-" + item.id;
+      if (!existingIds[rowId]) {
+        var tr = document.createElement("tr");
+        tr.id = rowId;
+        tr.innerHTML =
+          '<td><div class="cell-file">' +
+            '<img class="thumb" alt="">' +
+            '<div class="fname"><span class="name"></span><span class="dims"></span></div>' +
+          '</div></td>' +
+          '<td class="num original-size"></td>' +
+          '<td class="arrow">→</td>' +
+          '<td class="num result-size"></td>' +
+          '<td class="savings-cell"></td>' +
+          '<td><div class="row-actions">' +
+            '<button class="icon-btn cmp-btn" disabled title="Сравнить до/после" aria-label="Сравнить исходное и результат">' + ICONS.compare + '</button>' +
+            '<button class="icon-btn dl-btn" disabled title="Сохранить" aria-label="Сохранить файл">' + ICONS.download + '</button>' +
+            '<button class="icon-btn danger rm-btn" title="Удалить" aria-label="Удалить файл">' + ICONS.x + '</button>' +
+          '</div></td>';
+        fileRows.appendChild(tr);
+
+        tr.querySelector(".cmp-btn").addEventListener("click", function () {
+          if (item.status !== "done" || !item.outputBlob || item.kind !== "image") return;
+          openCompare(item);
+        });
+        tr.querySelector(".dl-btn").addEventListener("click", function (e) {
+          if (item.status !== "done" || (!item.outputBlob && !item.outputPath)) return;
+          var btn = e.currentTarget;
+          var original = btn.innerHTML;
+          btn.disabled = true;
+          saveItemOutput(item, outputFileName(item, {})).then(function () {
+            btn.innerHTML = ICONS.check;
+            setTimeout(function () {
+              btn.innerHTML = original;
+              btn.disabled = item.status !== "done";
+            }, 1200);
+          }).catch(function (err) {
+            btn.disabled = item.status !== "done";
+            if (err && err.code === "declined") return;
+            showToast(errorMessage(err));
+          });
+        });
+        tr.querySelector(".rm-btn").addEventListener("click", function () {
+          removeItem(item.id);
+        });
+      } else {
+        delete existingIds[rowId];
+      }
+      renderRow(item);
+    });
+
+    Object.keys(existingIds).forEach(function (id) {
+      existingIds[id].remove();
+    });
+  }
+
+  function updateSummary() {
+    var count = items.length;
+    var totalOriginal = 0, totalOutput = 0, doneCount = 0;
+    items.forEach(function (item) {
+      totalOriginal += item.originalSize;
+      if (item.status === "done") {
+        totalOutput += item.outputSize;
+        doneCount++;
+      }
+    });
+    statCount.textContent = String(count);
+    statOriginal.textContent = formatBytes(totalOriginal);
+    if (doneCount > 0) {
+      var compared = items.reduce(function (sum, it) {
+        return it.status === "done" ? sum + it.originalSize : sum;
+      }, 0);
+      statOutput.textContent = formatBytes(totalOutput);
+      var pct = compared > 0 ? Math.round(((compared - totalOutput) / compared) * 100) : 0;
+      statSavings.textContent = pct + "%";
+      statSavings.classList.toggle("good", pct >= 0);
+    } else {
+      statOutput.textContent = "—";
+      statSavings.textContent = "—";
+    }
+    downloadAllBtn.disabled = doneCount === 0;
+  }
+
+  // ---- Events ----
+  dropzone.addEventListener("click", function () { fileInput.click(); });
+  dropzone.addEventListener("keydown", function (e) {
+    if (e.key === "Enter" || e.key === " ") { e.preventDefault(); fileInput.click(); }
+  });
+  fileInput.addEventListener("change", function () {
+    addFiles(fileInput.files);
+    fileInput.value = "";
+  });
+  ["dragenter", "dragover"].forEach(function (evt) {
+    dropzone.addEventListener(evt, function (e) {
+      e.preventDefault();
+      dropzone.classList.add("drag-over");
+    });
+  });
+  ["dragleave", "drop"].forEach(function (evt) {
+    dropzone.addEventListener(evt, function (e) {
+      e.preventDefault();
+      dropzone.classList.remove("drag-over");
+    });
+  });
+
+  // Settings only take effect when "Применить ко всем файлам" is clicked —
+  // these listeners just keep the UI (labels, enabled sub-panels) in sync,
+  // they don't trigger any conversion.
+  formatSelect.addEventListener("change", updateFieldLabels);
+  qualitySlider.addEventListener("input", updateFieldLabels);
+  qualityValue.addEventListener("input", function () {
+    var v = parseInt(qualityValue.value, 10);
+    if (isNaN(v)) return;
+    v = Math.max(1, Math.min(100, v));
+    qualitySlider.value = v;
+  });
+  qualityValue.addEventListener("blur", function () {
+    qualityValue.value = qualitySlider.value;
+  });
+  resizeToggle.addEventListener("change", updateFieldLabels);
+  resizeDimModeSelect.addEventListener("change", function () {
+    var sides = resizeDimModeSelect.value === "sides";
+    resizeWHRow.style.display = sides ? "none" : "";
+    resizeSidesRow.style.display = sides ? "" : "none";
+  });
+  smartToggle.addEventListener("change", updateFieldLabels);
+  paletteToggle.addEventListener("change", updateFieldLabels);
+  paletteColorsSlider.addEventListener("input", updateFieldLabels);
+
+  applyAllBtn.addEventListener("click", function () {
+    if (!items.length) return;
+    var original = applyAllBtn.textContent;
+    applyAllBtn.disabled = true;
+    applyAllBtn.textContent = "Обработка…";
+    cancelApplyBtn.style.display = "";
+    convertAll(function (done, total) {
+      applyAllBtn.textContent = "Обработка " + done + "/" + total + "…";
+    }).then(function () {
+      applyAllBtn.disabled = false;
+      applyAllBtn.textContent = original;
+      cancelApplyBtn.style.display = "none";
+    });
+  });
+
+  cancelApplyBtn.addEventListener("click", function () {
+    // Not-yet-started jobs are simply dropped; whichever one file is
+    // already mid-flight is left to finish (canvas/encode work can't be
+    // aborted mid-way), then the queue just runs dry.
+    var cleared = jobQueue.splice(0, jobQueue.length);
+    cleared.forEach(function (job) { job.resolve(); });
+  });
+
+  clearAllBtn.addEventListener("click", function () {
+    location.reload();
+  });
+
+  concurrencySelect.addEventListener("change", function () {
+    var v = concurrencySelect.value;
+    MAX_CONCURRENT_JOBS = v === "all" ? Infinity : parseInt(v, 10);
+    pumpQueue();
+  });
+
+  videoQualitySlider.addEventListener("input", function () {
+    videoQualityValue.value = videoQualitySlider.value;
+  });
+  videoQualityValue.addEventListener("input", function () {
+    var v = parseInt(videoQualityValue.value, 10);
+    if (isNaN(v)) return;
+    videoQualitySlider.value = Math.max(1, Math.min(100, v));
+  });
+  videoQualityValue.addEventListener("blur", function () {
+    videoQualityValue.value = videoQualitySlider.value;
+  });
+  function updateVideoQualityFieldState() {
+    videoQualityField.classList.toggle("enabled", !videoNoRecodeToggle.checked && !videoAudioOnlyToggle.checked);
+  }
+  videoNoRecodeToggle.addEventListener("change", updateVideoQualityFieldState);
+  videoAudioOnlyToggle.addEventListener("change", updateVideoQualityFieldState);
+
+  applyVideoBtn.addEventListener("click", function () {
+    var settings = currentVideoSettings();
+    var key = JSON.stringify(settings);
+    var pending = items.filter(function (it) {
+      return it.kind === "video" && it.lastVideoSettingsKey !== key;
+    });
+    if (!pending.length) return;
+    var original = applyVideoBtn.textContent;
+    applyVideoBtn.disabled = true;
+    var done = 0;
+    pending.forEach(function (item) {
+      applyVideoBtn.textContent = "Обработка " + done + "/" + pending.length + "…";
+      enqueueVideoJob(function () { return convertVideoItem(item, settings); }).then(function () {
+        done++;
+        applyVideoBtn.textContent = done < pending.length ? "Обработка " + done + "/" + pending.length + "…" : original;
+        if (done >= pending.length) applyVideoBtn.disabled = false;
+      });
+    });
+  });
+
+  audioFormatSelect.addEventListener("change", function () {
+    audioQualityField.classList.toggle("enabled", audioFormatSelect.value !== "wav" && audioFormatSelect.value !== "flac");
+  });
+  audioQualitySlider.addEventListener("input", function () {
+    audioQualityValue.value = audioQualitySlider.value;
+  });
+  audioQualityValue.addEventListener("input", function () {
+    var v = parseInt(audioQualityValue.value, 10);
+    if (isNaN(v)) return;
+    audioQualitySlider.value = Math.max(1, Math.min(100, v));
+  });
+  audioQualityValue.addEventListener("blur", function () {
+    audioQualityValue.value = audioQualitySlider.value;
+  });
+
+  applyAudioBtn.addEventListener("click", function () {
+    var settings = currentAudioSettings();
+    var key = JSON.stringify(settings);
+    var pending = items.filter(function (it) {
+      return it.kind === "audio" && it.lastAudioSettingsKey !== key;
+    });
+    if (!pending.length) return;
+    var original = applyAudioBtn.textContent;
+    applyAudioBtn.disabled = true;
+    var done = 0;
+    pending.forEach(function (item) {
+      applyAudioBtn.textContent = "Обработка " + done + "/" + pending.length + "…";
+      enqueueAudioJob(function () { return convertAudioItem(item, settings); }).then(function () {
+        done++;
+        applyAudioBtn.textContent = done < pending.length ? "Обработка " + done + "/" + pending.length + "…" : original;
+        if (done >= pending.length) applyAudioBtn.disabled = false;
+      });
+    });
+  });
+
+  applyDocumentBtn.addEventListener("click", function () {
+    var settings = currentDocumentSettings();
+    var key = JSON.stringify(settings);
+    var pending = items.filter(function (it) {
+      return it.kind === "document" && it.lastDocumentSettingsKey !== key;
+    });
+    if (!pending.length) return;
+    var original = applyDocumentBtn.textContent;
+    applyDocumentBtn.disabled = true;
+    var done = 0;
+    pending.forEach(function (item) {
+      applyDocumentBtn.textContent = "Обработка " + done + "/" + pending.length + "…";
+      enqueueDocumentJob(function () { return convertDocumentItem(item, settings); }).then(function () {
+        done++;
+        applyDocumentBtn.textContent = done < pending.length ? "Обработка " + done + "/" + pending.length + "…" : original;
+        if (done >= pending.length) applyDocumentBtn.disabled = false;
+      });
+    });
+  });
+
+  applyPdfBtn.addEventListener("click", function () {
+    var settings = currentPdfSettings();
+    var key = JSON.stringify(settings);
+    var pending = items.filter(function (it) {
+      // Files that failed pre-flight inspection (encrypted/corrupted/not a
+      // PDF) have no pdfInfo — retrying those through Ghostscript would
+      // just waste time on something already known to fail.
+      return it.kind === "pdf" && it.pdfInfo && it.lastPdfSettingsKey !== key;
+    });
+    if (!pending.length) return;
+    var original = applyPdfBtn.textContent;
+    applyPdfBtn.disabled = true;
+    var done = 0;
+    pending.forEach(function (item) {
+      applyPdfBtn.textContent = "Обработка " + done + "/" + pending.length + "…";
+      enqueuePdfJob(function () { return convertPdfItem(item, settings); }).then(function () {
+        done++;
+        applyPdfBtn.textContent = done < pending.length ? "Обработка " + done + "/" + pending.length + "…" : original;
+        if (done >= pending.length) applyPdfBtn.disabled = false;
+      });
+    });
+  });
+
+  pdfModeSelect.addEventListener("change", updatePdfPanelState);
+  pdfDpiSelect.addEventListener("change", function () {
+    pdfCustomDpiField.style.display = pdfDpiSelect.value === "custom" ? "" : "none";
+    updatePdfEstimateUI();
+  });
+  pdfQualitySlider.addEventListener("input", function () {
+    pdfQualityValue.value = pdfQualitySlider.value;
+    updatePdfEstimateUI();
+  });
+  pdfQualityValue.addEventListener("input", function () {
+    pdfQualitySlider.value = pdfQualityValue.value;
+    updatePdfEstimateUI();
+  });
+  [pdfCustomDpiInput, pdfImageFormatSelect, pdfOptimizeImagesToggle, pdfCompressStreamsToggle,
+   pdfOptimizeFontsToggle, pdfFastWebViewToggle, pdfStripMetadataToggle, pdfStripHiddenToggle
+  ].forEach(function (el) { el.addEventListener("change", updatePdfEstimateUI); });
+  updatePdfPanelState();
+
+  downloadAllBtn.addEventListener("click", async function () {
+    var doneItems = items.filter(function (it) { return it.status === "done"; });
+    if (!doneItems.length) return;
+
+    // One folder picked up front (or the remembered default, if that's on),
+    // then every file lands there with no further per-file prompts.
+    var targetFolder = (useDefaultFolderToggle.checked && defaultSaveFolder) ? defaultSaveFolder : null;
+    if (!targetFolder) {
+      var folderResult = await window.desktopAPI.chooseFolder();
+      if (!folderResult.chosen) return;
+      targetFolder = folderResult.folderPath;
+    }
+
+    downloadAllBtn.disabled = true;
+    var usedNames = {};
+    var failed = 0;
+    var i = 0;
+
+    function finish(message) {
+      downloadAllBtn.disabled = false;
+      downloadAllBtn.textContent = "Сохранить все файлы";
+      if (message) showToast(message);
+    }
+
+    function next() {
+      if (i >= doneItems.length) {
+        finish(failed > 0 ? failed + " файл(ов) не удалось сохранить" : doneItems.length + " файл(ов) сохранено");
+        return;
+      }
+      var item = doneItems[i];
+      downloadAllBtn.textContent = "Сохранение " + (i + 1) + " из " + doneItems.length + "…";
+      var filename = outputFileName(item, usedNames);
+
+      var savePromise = item.outputPath
+        ? window.desktopAPI.saveToFolder({ folderPath: targetFolder, filename: filename, outputPath: item.outputPath })
+        : item.outputBlob.arrayBuffer().then(function (buffer) {
+            return window.desktopAPI.saveToFolder({ folderPath: targetFolder, filename: filename, buffer: buffer });
+          });
+
+      savePromise.then(function () {
+        i++;
+        next();
+      }).catch(function (err) {
+        console.error("Save to folder failed:", err);
+        failed++;
+        i++;
+        next();
+      });
+    }
+    next();
+  });
+
+  // ---- Before/after compare viewer ----
+  var compareModal = document.getElementById("compareModal");
+  var compareClose = document.getElementById("compareClose");
+  var toBatchBtn = document.getElementById("toBatchBtn");
+  var toSingleBtn = document.getElementById("toSingleBtn");
+  var batchScreen = document.getElementById("batchScreen");
+  var compareEmptyZone = document.getElementById("compareEmptyZone");
+  var compareEmptyInput = document.getElementById("compareEmptyInput");
+  var compareMain = document.getElementById("compareMain");
+  var compareViewport = document.getElementById("compareViewport");
+  var compareFrame = document.getElementById("compareFrame");
+  var compareBeforeImg = document.getElementById("compareBefore");
+  var compareAfterImg = document.getElementById("compareAfter");
+  var compareHandle = document.getElementById("compareHandle");
+  var compareLabelBefore = document.getElementById("compareLabelBefore");
+  var compareLabelAfter = document.getElementById("compareLabelAfter");
+  var compareName = document.getElementById("compareName");
+  var compareOrigDims = document.getElementById("compareOrigDims");
+  var compareOrigSize = document.getElementById("compareOrigSize");
+  var compareOutDims = document.getElementById("compareOutDims");
+  var compareOutSize = document.getElementById("compareOutSize");
+  var compareSavingsChip = document.getElementById("compareSavingsChip");
+  var compareDownloadBtn = document.getElementById("compareDownloadBtn");
+  var compareZoomOut = document.getElementById("compareZoomOut");
+  var compareZoomIn = document.getElementById("compareZoomIn");
+  var compareZoomValue = document.getElementById("compareZoomValue");
+  var compareResizeToggle = document.getElementById("compareResizeToggle");
+  var compareResizeSub = document.getElementById("compareResizeSub");
+  var compareResizeMethodSelect = document.getElementById("compareResizeMethodSelect");
+  var compareResizeDimModeSelect = document.getElementById("compareResizeDimModeSelect");
+  var compareResizeWHRow = document.getElementById("compareResizeWHRow");
+  var compareResizeSidesRow = document.getElementById("compareResizeSidesRow");
+  var compareResizeWidthInput = document.getElementById("compareResizeWidthInput");
+  var compareResizeHeightInput = document.getElementById("compareResizeHeightInput");
+  var compareResizeShortInput = document.getElementById("compareResizeShortInput");
+  var compareResizeLongInput = document.getElementById("compareResizeLongInput");
+  var compareMaintainAspectToggle = document.getElementById("compareMaintainAspectToggle");
+  var comparePaletteToggle = document.getElementById("comparePaletteToggle");
+  var comparePaletteSub = document.getElementById("comparePaletteSub");
+  var comparePaletteColorsSlider = document.getElementById("comparePaletteColorsSlider");
+  var comparePaletteColorsValue = document.getElementById("comparePaletteColorsValue");
+  var compareDitherToggle = document.getElementById("compareDitherToggle");
+  var compareFormatSelect = document.getElementById("compareFormatSelect");
+  var compareQualityField = document.getElementById("compareQualityField");
+  var compareQualitySlider = document.getElementById("compareQualitySlider");
+  var compareQualityValue = document.getElementById("compareQualityValue");
+  var compareQualityLabelPrefix = document.getElementById("compareQualityLabelPrefix");
+  var compareSmartToggle = document.getElementById("compareSmartToggle");
+  var compareSmartSub = document.getElementById("compareSmartSub");
+  var compareTargetSizeInput = document.getElementById("compareTargetSizeInput");
+  var compareSmartHint = document.getElementById("compareSmartHint");
+
+  var compareBeforeUrl = null;
+  var compareAfterUrl = null;
+  var compareDragging = false;
+  var panDragging = false;
+  var panStartX = 0, panStartY = 0, panOriginX = 0, panOriginY = 0;
+  var panX = 0, panY = 0;
+  var compareHandleViewportPct = 50;
+  var HANDLE_HIT_PX = 18;
+  var compareCurrentItem = null;
+  var compareZoomPct = 100;
+  var compareZoomManual = false;
+  var compareDebounce = null;
+
+  /* The divider lives in the viewport, not the frame, so its screen
+     position stays put while the image pans/zooms underneath it. Its
+     effect on the AFTER image's clip is recomputed from wherever the
+     frame currently sits relative to that fixed screen position. */
+  function updateAfterClip() {
+    var vpRect = compareViewport.getBoundingClientRect();
+    var frameRect = compareFrame.getBoundingClientRect();
+    var handleClientX = vpRect.left + (compareHandleViewportPct / 100) * vpRect.width;
+    var frac = frameRect.width > 0 ? (handleClientX - frameRect.left) / frameRect.width : 0.5;
+    frac = Math.max(0, Math.min(1, frac));
+    /* Original (compareBeforeImg) is the unclipped base layer, so clipping
+       the AFTER image's left side reveals "До" on the left and "После" on
+       the right, matching the corner labels. */
+    compareAfterImg.style.clipPath = "inset(0 0 0 " + (frac * 100) + "%)";
+  }
+
+  function setHandleViewportPct(pct) {
+    pct = Math.max(0, Math.min(100, pct));
+    compareHandleViewportPct = pct;
+    compareHandle.style.left = pct + "%";
+    updateAfterClip();
+  }
+
+  function viewportPctFromEvent(e) {
+    var rect = compareViewport.getBoundingClientRect();
+    var x = e.clientX - rect.left;
+    return (x / rect.width) * 100;
+  }
+
+  function computeFitPct() {
+    var iw = compareBeforeImg.naturalWidth;
+    var ih = compareBeforeImg.naturalHeight;
+    if (!iw || !ih) return 100;
+    var vp = compareViewport.getBoundingClientRect();
+    var maxW = Math.max(vp.width - 48, 80);
+    var maxH = Math.max(vp.height - 48, 80);
+    return Math.min(maxW / iw, maxH / ih, 1.5) * 100;
+  }
+
+  function applyTransform() {
+    compareFrame.style.transform = "translate(-50%, -50%) translate(" + panX + "px, " + panY + "px)";
+    updateAfterClip();
+  }
+
+  function applyZoom() {
+    var iw = compareBeforeImg.naturalWidth;
+    var ih = compareBeforeImg.naturalHeight;
+    if (!iw || !ih) return;
+    var scale = compareZoomPct / 100;
+    compareFrame.style.width = Math.round(iw * scale) + "px";
+    compareFrame.style.height = Math.round(ih * scale) + "px";
+    applyTransform();
+    compareZoomValue.textContent = Math.round(compareZoomPct) + "%";
+  }
+
+  /* Zoom while keeping the image point under (anchorX, anchorY) — in
+     viewport (client) coordinates — stationary on screen. */
+  function zoomTo(newPct, anchorX, anchorY) {
+    var iw = compareBeforeImg.naturalWidth;
+    var ih = compareBeforeImg.naturalHeight;
+    newPct = Math.max(10, Math.min(400, newPct));
+    if (!iw || !ih) { compareZoomPct = newPct; return; }
+
+    var vp = compareViewport.getBoundingClientRect();
+    var centerX = vp.left + vp.width / 2;
+    var centerY = vp.top + vp.height / 2;
+
+    var oldW = iw * (compareZoomPct / 100);
+    var oldH = ih * (compareZoomPct / 100);
+    var frameLeft = centerX + panX - oldW / 2;
+    var frameTop = centerY + panY - oldH / 2;
+    var fracX = Math.max(-1, Math.min(2, (anchorX - frameLeft) / oldW));
+    var fracY = Math.max(-1, Math.min(2, (anchorY - frameTop) / oldH));
+
+    compareZoomPct = newPct;
+    var newW = iw * (compareZoomPct / 100);
+    var newH = ih * (compareZoomPct / 100);
+    var newFrameLeft = anchorX - fracX * newW;
+    var newFrameTop = anchorY - fracY * newH;
+
+    panX = newFrameLeft - centerX + newW / 2;
+    panY = newFrameTop - centerY + newH / 2;
+
+    applyZoom();
+  }
+
+  function getViewportCenter() {
+    var vp = compareViewport.getBoundingClientRect();
+    return { x: vp.left + vp.width / 2, y: vp.top + vp.height / 2 };
+  }
+
+  function layoutCompareFrame(resetZoom) {
+    if (resetZoom || !compareZoomManual) {
+      compareZoomPct = computeFitPct();
+      compareZoomManual = false;
+      panX = 0;
+      panY = 0;
+    }
+    applyZoom();
+  }
+
+  function updateCompareInfo(item) {
+    compareOrigDims.textContent = item.width + "×" + item.height;
+    compareOrigSize.textContent = formatBytes(item.originalSize);
+    compareOutDims.textContent = item.outputWidth + "×" + item.outputHeight;
+    compareOutSize.textContent = formatBytes(item.outputSize) + (item.hitSizeFloor ? " ⚠" : "");
+    compareOutSize.title = item.hitSizeFloor ? "Не удалось уложиться в лимит веса" : "";
+
+    var diff = item.originalSize - item.outputSize;
+    var pct = item.originalSize > 0 ? Math.round((diff / item.originalSize) * 100) : 0;
+    compareSavingsChip.textContent = (pct >= 0 ? "↓" : "↑") + Math.abs(pct) + "%";
+    compareSavingsChip.className = "compare-savings-badge " + (pct >= 0 ? "good" : "bad");
+
+    var qualityPart = item.outputFormat !== "png" ? " · " + item.outputQuality + "%" : "";
+    compareLabelAfter.textContent = "После · " + item.outputFormat.toUpperCase() + qualityPart;
+  }
+
+  function refreshCompareAfterImage(item) {
+    if (compareAfterUrl) URL.revokeObjectURL(compareAfterUrl);
+    compareAfterUrl = URL.createObjectURL(item.outputBlob);
+    compareAfterImg.src = compareAfterUrl;
+    updateCompareInfo(item);
+  }
+
+  function updateCompareFieldVisibility() {
+    // Smart mode picks quality itself (full 1–100 range) — the slider
+    // doesn't apply there, so grey it out instead of pretending it's a ceiling.
+    compareQualityField.classList.toggle("enabled", compareFormatSelect.value !== "png" && !compareSmartToggle.checked);
+    compareSmartSub.classList.toggle("enabled", compareSmartToggle.checked);
+    compareSmartHint.classList.toggle("visible", compareSmartToggle.checked);
+    comparePaletteSub.classList.toggle("enabled", comparePaletteToggle.checked);
+    comparePaletteColorsValue.textContent = comparePaletteColorsSlider.value;
+  }
+
+  function compareSettings() {
+    return {
+      format: compareFormatSelect.value,
+      quality: parseInt(compareQualitySlider.value, 10),
+      resize: compareResizeToggle.checked,
+      resizeMode: compareResizeDimModeSelect.value,
+      resizeWidth: parseInt(compareResizeWidthInput.value, 10),
+      resizeHeight: parseInt(compareResizeHeightInput.value, 10),
+      resizeShort: parseInt(compareResizeShortInput.value, 10),
+      resizeLong: parseInt(compareResizeLongInput.value, 10),
+      maintainAspect: compareMaintainAspectToggle.checked,
+      resizeMethod: compareResizeMethodSelect.value,
+      targetBytes: targetBytesFrom(compareSmartToggle, compareTargetSizeInput),
+      palette: comparePaletteToggle.checked,
+      paletteColors: parseInt(comparePaletteColorsSlider.value, 10),
+      dither: compareDitherToggle.checked
+    };
+  }
+
+  function scheduleCompareConvert() {
+    clearTimeout(compareDebounce);
+    compareDebounce = setTimeout(function () {
+      if (compareCurrentItem) convertItem(compareCurrentItem, compareSettings());
+    }, 300);
+  }
+
+  function revokeCompareUrls() {
+    if (compareBeforeUrl) { URL.revokeObjectURL(compareBeforeUrl); compareBeforeUrl = null; }
+    if (compareAfterUrl) { URL.revokeObjectURL(compareAfterUrl); compareAfterUrl = null; }
+  }
+
+  function openCompare(item) {
+    revokeCompareUrls();
+    compareCurrentItem = item;
+    compareBeforeUrl = URL.createObjectURL(item.file);
+    compareBeforeImg.src = compareBeforeUrl;
+
+    compareName.textContent = item.name;
+    compareLabelBefore.textContent = "До · " + sourceFormatLabel(item);
+
+    var ready = item.status === "done" && item.outputBlob;
+    var refW = item.width || parseInt(resizeWidthInput.value, 10);
+    var refH = item.height || parseInt(resizeHeightInput.value, 10);
+
+    if (ready) {
+      refreshCompareAfterImage(item);
+      compareFormatSelect.value = compareCompatibleFormat(item.outputFormat);
+      compareQualitySlider.value = item.outputQuality || 80;
+      var wasResized = item.outputWidth !== item.width || item.outputHeight !== item.height;
+      compareResizeToggle.checked = wasResized;
+      compareResizeWidthInput.value = wasResized ? item.outputWidth : refW;
+      compareResizeHeightInput.value = wasResized ? item.outputHeight : refH;
+    } else {
+      compareAfterImg.removeAttribute("src");
+      compareLabelAfter.textContent = "Обработка…";
+      compareOutDims.textContent = "…";
+      compareOutSize.textContent = "…";
+      compareSavingsChip.textContent = "";
+      compareSavingsChip.className = "compare-savings-badge";
+      var s = currentSettings();
+      compareFormatSelect.value = compareCompatibleFormat(s.format);
+      compareQualitySlider.value = s.quality;
+      compareResizeToggle.checked = s.resize;
+      compareResizeWidthInput.value = s.resize ? s.resizeWidth : refW;
+      compareResizeHeightInput.value = s.resize ? s.resizeHeight : refH;
+      compareOrigDims.textContent = item.width ? item.width + "×" + item.height : "…";
+      compareOrigSize.textContent = formatBytes(item.originalSize);
+    }
+    var refShort = item.width && item.height ? Math.min(item.width, item.height) : parseInt(resizeShortInput.value, 10);
+    var refLong = item.width && item.height ? Math.max(item.width, item.height) : parseInt(resizeLongInput.value, 10);
+    compareResizeShortInput.value = refShort;
+    compareResizeLongInput.value = refLong;
+    compareResizeDimModeSelect.value = "wh";
+    compareResizeWHRow.style.display = "";
+    compareResizeSidesRow.style.display = "none";
+    compareQualityValue.value = compareQualitySlider.value;
+    compareResizeSub.classList.toggle("enabled", compareResizeToggle.checked);
+    compareResizeMethodSelect.value = resizeMethodSelect.value;
+    compareMaintainAspectToggle.checked = true;
+    compareSmartToggle.checked = false;
+    compareTargetSizeInput.value = targetSizeInput.value || 200;
+    comparePaletteToggle.checked = paletteToggle.checked;
+    comparePaletteColorsSlider.value = paletteColorsSlider.value;
+    compareDitherToggle.checked = ditherToggle.checked;
+    updateCompareFieldVisibility();
+
+    setHandleViewportPct(50);
+    compareZoomManual = false;
+    compareModal.classList.add("open");
+    compareModal.classList.add("has-item");
+    document.body.style.overflow = "hidden";
+    compareBeforeImg.onload = function () { layoutCompareFrame(true); };
+    if (compareBeforeImg.complete) layoutCompareFrame(true);
+
+    // The single-file editor has no "Apply" button — it's a live preview,
+    // so (unlike the batch table) it still converts as soon as a file is
+    // ready to be shown, and again whenever a setting changes.
+    if (!ready) scheduleCompareConvert();
+  }
+
+  function closeCompareOverlay() {
+    compareModal.classList.remove("open");
+    compareModal.classList.remove("has-item");
+    document.body.style.overflow = "";
+    compareDragging = false;
+    compareCurrentItem = null;
+    revokeCompareUrls();
+  }
+
+  function clearSingleEditor() {
+    compareDragging = false;
+    compareCurrentItem = null;
+    revokeCompareUrls();
+    compareModal.classList.remove("has-item");
+    document.body.style.overflow = "";
+  }
+
+  function loadSingleFile(file) {
+    if (!file || file.type.indexOf("image/") !== 0) return;
+    addFiles([file]);
+    var item = items[items.length - 1];
+    if (item) openCompare(item);
+  }
+
+  function switchToBatchScreen() {
+    compareModal.classList.remove("embedded");
+    compareModal.classList.remove("open");
+    document.body.style.overflow = "";
+    batchScreen.style.display = "block";
+  }
+
+  /* Dropping/selecting several photos on the single-file editor doesn't
+     make sense there (it only ever shows one at a time) — hand them off
+     to the batch screen instead of silently discarding all but the first. */
+  function handleSingleScreenFiles(fileList) {
+    var files = Array.prototype.slice.call(fileList).filter(function (f) {
+      return kindOf(f) !== null;
+    });
+    if (!files.length) return;
+    // The single-file editor is image-only (canvas-based compare view) —
+    // everything else always goes to the batch table, same as multiple images.
+    if (files.length === 1 && files[0].type.indexOf("image/") === 0) {
+      loadSingleFile(files[0]);
+    } else {
+      addFiles(files);
+      switchToBatchScreen();
+    }
+  }
+
+  compareClose.addEventListener("click", function () {
+    if (compareModal.classList.contains("embedded")) {
+      clearSingleEditor();
+    } else {
+      closeCompareOverlay();
+    }
+  });
+  document.addEventListener("keydown", function (e) {
+    if (e.key !== "Escape") return;
+    if (compareModal.classList.contains("embedded")) return;
+    if (compareModal.classList.contains("open")) closeCompareOverlay();
+  });
+  window.addEventListener("resize", function () {
+    if (compareModal.classList.contains("has-item")) layoutCompareFrame(false);
+  });
+
+  toBatchBtn.addEventListener("click", switchToBatchScreen);
+  toSingleBtn.addEventListener("click", function () {
+    batchScreen.style.display = "none";
+    compareModal.classList.add("embedded");
+    if (compareModal.classList.contains("has-item")) layoutCompareFrame(false);
+  });
+
+  compareEmptyZone.addEventListener("click", function () { compareEmptyInput.click(); });
+  compareEmptyZone.addEventListener("keydown", function (e) {
+    if (e.key === "Enter" || e.key === " ") { e.preventDefault(); compareEmptyInput.click(); }
+  });
+  compareEmptyInput.addEventListener("change", function () {
+    handleSingleScreenFiles(compareEmptyInput.files);
+    compareEmptyInput.value = "";
+  });
+  ["dragenter", "dragover"].forEach(function (evt) {
+    compareEmptyZone.addEventListener(evt, function (e) { e.preventDefault(); compareEmptyZone.classList.add("drag-over"); });
+  });
+  ["dragleave", "drop"].forEach(function (evt) {
+    compareEmptyZone.addEventListener(evt, function (e) { e.preventDefault(); compareEmptyZone.classList.remove("drag-over"); });
+  });
+
+  // Files can be dropped anywhere on the page, not just inside the small
+  // drop-zone box — route to whichever screen (single editor or batch
+  // table) is currently active. Without this, the browser's default drop
+  // behavior (navigating to open the file) kicks in outside the zone.
+  // dragenter/dragleave fire for every element the pointer crosses during
+  // the drag, so a plain show/hide flickers — a counter that only hits
+  // zero once the pointer has actually left every nested element (or the
+  // window) is what keeps the overlay stable.
+  var dragCounter = 0;
+  window.addEventListener("dragenter", function (e) {
+    e.preventDefault();
+    dragCounter++;
+    dragOverlay.classList.add("visible");
+  });
+  window.addEventListener("dragover", function (e) { e.preventDefault(); });
+  window.addEventListener("dragleave", function (e) {
+    e.preventDefault();
+    dragCounter--;
+    if (dragCounter <= 0) {
+      dragCounter = 0;
+      dragOverlay.classList.remove("visible");
+    }
+  });
+  // webkitGetAsEntry (standard Directory & System Entries API, well-
+  // supported in Chromium/Electron) lets a dropped folder be walked
+  // recursively into real File objects — no path/IPC plumbing needed, the
+  // resulting Files work with every existing code path unchanged.
+  function readAllEntries(dirReader) {
+    return new Promise(function (resolve) {
+      var all = [];
+      function readBatch() {
+        dirReader.readEntries(function (entries) {
+          if (!entries.length) { resolve(all); return; }
+          all = all.concat(entries);
+          readBatch();
+        }, function () { resolve(all); });
+      }
+      readBatch();
+    });
+  }
+  async function collectFilesFromEntry(entry, out) {
+    if (entry.isFile) {
+      var file = await new Promise(function (resolve) { entry.file(resolve, function () { resolve(null); }); });
+      if (file) out.push(file);
+    } else if (entry.isDirectory) {
+      var entries = await readAllEntries(entry.createReader());
+      for (var i = 0; i < entries.length; i++) {
+        await collectFilesFromEntry(entries[i], out);
+      }
+    }
+  }
+  async function filesFromDataTransfer(dataTransfer) {
+    if (!dataTransfer) return [];
+    var items = dataTransfer.items;
+    if (!items || !items.length || !items[0].webkitGetAsEntry) {
+      return dataTransfer.files ? Array.prototype.slice.call(dataTransfer.files) : [];
+    }
+    var entries = [];
+    for (var i = 0; i < items.length; i++) {
+      var entry = items[i].webkitGetAsEntry && items[i].webkitGetAsEntry();
+      if (entry) entries.push(entry);
+    }
+    if (!entries.length) return dataTransfer.files ? Array.prototype.slice.call(dataTransfer.files) : [];
+    var out = [];
+    for (var j = 0; j < entries.length; j++) {
+      await collectFilesFromEntry(entries[j], out);
+    }
+    return out;
+  }
+
+  window.addEventListener("drop", async function (e) {
+    e.preventDefault();
+    dragCounter = 0;
+    dragOverlay.classList.remove("visible");
+    var files = await filesFromDataTransfer(e.dataTransfer);
+    if (!files.length) return;
+    if (compareModal.classList.contains("embedded")) {
+      handleSingleScreenFiles(files);
+    } else {
+      addFiles(files);
+    }
+  });
+
+  function isNearHandle(e) {
+    var rect = compareViewport.getBoundingClientRect();
+    var handleClientX = rect.left + (compareHandleViewportPct / 100) * rect.width;
+    return Math.abs(e.clientX - handleClientX) <= HANDLE_HIT_PX;
+  }
+
+  compareViewport.addEventListener("pointerdown", function (e) {
+    if (!compareModal.classList.contains("has-item")) return;
+    compareViewport.setPointerCapture(e.pointerId);
+    if (isNearHandle(e)) {
+      compareDragging = true;
+      setHandleViewportPct(viewportPctFromEvent(e));
+    } else {
+      panDragging = true;
+      panStartX = e.clientX;
+      panStartY = e.clientY;
+      panOriginX = panX;
+      panOriginY = panY;
+      compareViewport.classList.add("panning");
+    }
+  });
+  compareViewport.addEventListener("pointermove", function (e) {
+    if (compareDragging) { setHandleViewportPct(viewportPctFromEvent(e)); return; }
+    if (panDragging) {
+      panX = panOriginX + (e.clientX - panStartX);
+      panY = panOriginY + (e.clientY - panStartY);
+      applyTransform();
+      return;
+    }
+    compareViewport.classList.toggle("near-handle", isNearHandle(e));
+  });
+  ["pointerup", "pointercancel"].forEach(function (evt) {
+    compareViewport.addEventListener(evt, function () {
+      compareDragging = false;
+      panDragging = false;
+      compareViewport.classList.remove("panning");
+    });
+  });
+
+  compareZoomIn.addEventListener("click", function () {
+    compareZoomManual = true;
+    var c = getViewportCenter();
+    zoomTo(compareZoomPct + 25, c.x, c.y);
+  });
+  compareZoomOut.addEventListener("click", function () {
+    compareZoomManual = true;
+    var c = getViewportCenter();
+    zoomTo(compareZoomPct - 25, c.x, c.y);
+  });
+  compareZoomValue.addEventListener("click", function () {
+    compareZoomManual = true;
+    var c = getViewportCenter();
+    zoomTo(100, c.x, c.y);
+  });
+
+  compareViewport.addEventListener("wheel", function (e) {
+    if (!compareModal.classList.contains("has-item")) return;
+    e.preventDefault();
+    compareZoomManual = true;
+    var factor = e.deltaY < 0 ? 1.1 : 1 / 1.1;
+    zoomTo(compareZoomPct * factor, e.clientX, e.clientY);
+  }, { passive: false });
+
+  compareFormatSelect.addEventListener("change", function () {
+    updateCompareFieldVisibility();
+    scheduleCompareConvert();
+  });
+  compareQualitySlider.addEventListener("input", function () {
+    compareQualityValue.value = compareQualitySlider.value;
+    scheduleCompareConvert();
+  });
+  compareQualityValue.addEventListener("input", function () {
+    var v = parseInt(compareQualityValue.value, 10);
+    if (isNaN(v)) return;
+    v = Math.max(1, Math.min(100, v));
+    compareQualitySlider.value = v;
+    scheduleCompareConvert();
+  });
+  compareQualityValue.addEventListener("blur", function () {
+    compareQualityValue.value = compareQualitySlider.value;
+  });
+  compareResizeToggle.addEventListener("change", function () {
+    compareResizeSub.classList.toggle("enabled", compareResizeToggle.checked);
+    scheduleCompareConvert();
+  });
+  // Fields stay linked to the loaded photo's own aspect ratio while
+  // "Сохранить пропорции" is on — width and height stay linked live.
+  compareResizeWidthInput.addEventListener("input", function () {
+    if (compareMaintainAspectToggle.checked && compareCurrentItem && compareCurrentItem.width) {
+      var ratio = compareCurrentItem.height / compareCurrentItem.width;
+      var w = parseFloat(compareResizeWidthInput.value);
+      if (w > 0) compareResizeHeightInput.value = Math.max(1, Math.round(w * ratio));
+    }
+    scheduleCompareConvert();
+  });
+  compareResizeHeightInput.addEventListener("input", function () {
+    if (compareMaintainAspectToggle.checked && compareCurrentItem && compareCurrentItem.height) {
+      var ratio = compareCurrentItem.width / compareCurrentItem.height;
+      var h = parseFloat(compareResizeHeightInput.value);
+      if (h > 0) compareResizeWidthInput.value = Math.max(1, Math.round(h * ratio));
+    }
+    scheduleCompareConvert();
+  });
+  compareMaintainAspectToggle.addEventListener("change", function () {
+    if (compareMaintainAspectToggle.checked && compareCurrentItem && compareCurrentItem.width) {
+      var ratio = compareCurrentItem.height / compareCurrentItem.width;
+      var w = parseFloat(compareResizeWidthInput.value);
+      if (w > 0) compareResizeHeightInput.value = Math.max(1, Math.round(w * ratio));
+    }
+    scheduleCompareConvert();
+  });
+  compareResizeMethodSelect.addEventListener("change", function () {
+    scheduleCompareConvert();
+  });
+  compareResizeDimModeSelect.addEventListener("change", function () {
+    var sides = compareResizeDimModeSelect.value === "sides";
+    compareResizeWHRow.style.display = sides ? "none" : "";
+    compareResizeSidesRow.style.display = sides ? "" : "none";
+    scheduleCompareConvert();
+  });
+  // Short/long stay linked the same way width/height do — the "short" and
+  // "long" targets always mean the photo's actual smaller/larger side,
+  // regardless of which one is literally width vs height.
+  compareResizeShortInput.addEventListener("input", function () {
+    if (compareMaintainAspectToggle.checked && compareCurrentItem && compareCurrentItem.width) {
+      var srcShort = Math.min(compareCurrentItem.width, compareCurrentItem.height);
+      var srcLong = Math.max(compareCurrentItem.width, compareCurrentItem.height);
+      var s = parseFloat(compareResizeShortInput.value);
+      if (s > 0) compareResizeLongInput.value = Math.max(1, Math.round(s * (srcLong / srcShort)));
+    }
+    scheduleCompareConvert();
+  });
+  compareResizeLongInput.addEventListener("input", function () {
+    if (compareMaintainAspectToggle.checked && compareCurrentItem && compareCurrentItem.width) {
+      var srcShort = Math.min(compareCurrentItem.width, compareCurrentItem.height);
+      var srcLong = Math.max(compareCurrentItem.width, compareCurrentItem.height);
+      var l = parseFloat(compareResizeLongInput.value);
+      if (l > 0) compareResizeShortInput.value = Math.max(1, Math.round(l * (srcShort / srcLong)));
+    }
+    scheduleCompareConvert();
+  });
+  compareSmartToggle.addEventListener("change", function () {
+    updateCompareFieldVisibility();
+    scheduleCompareConvert();
+  });
+  compareTargetSizeInput.addEventListener("input", function () {
+    scheduleCompareConvert();
+  });
+  comparePaletteToggle.addEventListener("change", function () {
+    updateCompareFieldVisibility();
+    scheduleCompareConvert();
+  });
+  comparePaletteColorsSlider.addEventListener("input", function () {
+    updateCompareFieldVisibility();
+    scheduleCompareConvert();
+  });
+  compareDitherToggle.addEventListener("change", function () {
+    scheduleCompareConvert();
+  });
+
+  compareDownloadBtn.addEventListener("click", function () {
+    if (!compareCurrentItem || !compareCurrentItem.outputBlob) return;
+    var btn = compareDownloadBtn;
+    var original = btn.innerHTML;
+    btn.disabled = true;
+    saveFile(outputFileName(compareCurrentItem, {}), compareCurrentItem.outputBlob).then(function () {
+      btn.innerHTML = ICONS.check;
+      setTimeout(function () { btn.innerHTML = original; btn.disabled = false; }, 1200);
+    }).catch(function (err) {
+      btn.disabled = false;
+      if (err && err.code === "declined") return;
+      showToast(errorMessage(err));
+    });
+  });
+
+  // ---- Floating parameter hints ----
+  // Rendered fixed to the viewport (not nested in the sidebar's own
+  // scroll container) so they're never clipped and always paint on top.
+  var hintTip = document.getElementById("hintTip");
+
+  function showHint(trigger) {
+    var text = trigger.getAttribute("data-tip");
+    if (!text) return;
+    hintTip.textContent = text;
+    hintTip.classList.add("visible");
+
+    var rect = trigger.getBoundingClientRect();
+    var tipRect = hintTip.getBoundingClientRect();
+    var margin = 8;
+
+    var left = rect.left + rect.width / 2 - tipRect.width / 2;
+    left = Math.max(margin, Math.min(left, window.innerWidth - tipRect.width - margin));
+
+    var top = rect.top - tipRect.height - 10;
+    if (top < margin) top = rect.bottom + 10;
+
+    hintTip.style.left = Math.round(left) + "px";
+    hintTip.style.top = Math.round(top) + "px";
+  }
+
+  function hideHint() {
+    hintTip.classList.remove("visible");
+  }
+
+  Array.prototype.forEach.call(document.querySelectorAll(".tip"), function (el) {
+    el.addEventListener("mouseenter", function () { showHint(el); });
+    el.addEventListener("mouseleave", hideHint);
+    el.addEventListener("focus", function () { showHint(el); });
+    el.addEventListener("blur", hideHint);
+  });
+  document.addEventListener("scroll", hideHint, true);
+
+  // ---- WebP support detection ----
+  (function detectWebp() {
+    var c = document.createElement("canvas");
+    c.width = 1; c.height = 1;
+    c.toBlob(function (blob) {
+      webpSupported = !!blob && blob.type === "image/webp";
+      if (!webpSupported) {
+        formatSelect.value = "jpeg";
+        var webpOption = formatSelect.querySelector('option[value="webp"]');
+        if (webpOption) webpOption.disabled = true;
+        webpBanner.classList.add("visible");
+        updateFieldLabels();
+      }
+    }, "image/webp");
+  })();
+
+  // ---- Default save folder ----
+  var defaultSaveFolder = localStorage.getItem("defaultSaveFolder") || null;
+  function updateDefaultFolderUI() {
+    chooseDefaultFolderBtn.style.display = useDefaultFolderToggle.checked ? "" : "none";
+    defaultFolderPathEl.textContent = (useDefaultFolderToggle.checked && defaultSaveFolder) ? defaultSaveFolder : "";
+  }
+  useDefaultFolderToggle.checked = localStorage.getItem("useDefaultFolder") === "true" && !!defaultSaveFolder;
+  updateDefaultFolderUI();
+
+  useDefaultFolderToggle.addEventListener("change", function () {
+    if (useDefaultFolderToggle.checked && !defaultSaveFolder) {
+      window.desktopAPI.chooseFolder().then(function (result) {
+        if (result.chosen) {
+          defaultSaveFolder = result.folderPath;
+          localStorage.setItem("defaultSaveFolder", defaultSaveFolder);
+          localStorage.setItem("useDefaultFolder", "true");
+        } else {
+          useDefaultFolderToggle.checked = false;
+        }
+        updateDefaultFolderUI();
+      });
+    } else {
+      localStorage.setItem("useDefaultFolder", useDefaultFolderToggle.checked ? "true" : "false");
+      updateDefaultFolderUI();
+    }
+  });
+  chooseDefaultFolderBtn.addEventListener("click", function () {
+    window.desktopAPI.chooseFolder().then(function (result) {
+      if (result.chosen) {
+        defaultSaveFolder = result.folderPath;
+        localStorage.setItem("defaultSaveFolder", defaultSaveFolder);
+        updateDefaultFolderUI();
+      }
+    });
+  });
+
+  // ---- Filename suffix on save — a save-mechanics preference like the
+  // default folder above, so it's remembered regardless of the separate
+  // "remember conversion settings" toggle below. ----
+  fileSuffixInput.value = localStorage.getItem("fileSuffix") || "";
+  fileSuffixInput.addEventListener("input", function () {
+    localStorage.setItem("fileSuffix", fileSuffixInput.value);
+  });
+
+  // ---- Remember settings between launches (off by default) ----
+  var REMEMBERED_SETTINGS_IDS = [
+    "formatSelect", "qualitySlider", "resizeToggle", "resizeDimModeSelect",
+    "resizeWidthInput", "resizeHeightInput", "resizeShortInput", "resizeLongInput",
+    "maintainAspectToggle", "resizeMethodSelect", "smartToggle", "targetSizeInput",
+    "paletteToggle", "paletteColorsSlider", "ditherToggle",
+    "videoFormatSelect", "videoQualitySlider", "videoNoRecodeToggle", "videoAudioOnlyToggle",
+    "audioFormatSelect", "audioQualitySlider", "audioTrimSilenceToggle", "audioNormalizeToggle",
+    "documentFormatSelect"
+  ];
+  function saveRememberedSettings() {
+    if (!rememberSettingsToggle.checked) return;
+    var data = {};
+    REMEMBERED_SETTINGS_IDS.forEach(function (id) {
+      var el = document.getElementById(id);
+      if (!el) return;
+      data[id] = el.type === "checkbox" ? el.checked : el.value;
+    });
+    localStorage.setItem("rememberedSettings", JSON.stringify(data));
+  }
+  function loadRememberedSettings() {
+    var raw = localStorage.getItem("rememberedSettings");
+    if (!raw) return;
+    try {
+      var data = JSON.parse(raw);
+      REMEMBERED_SETTINGS_IDS.forEach(function (id) {
+        var el = document.getElementById(id);
+        if (!el || !(id in data)) return;
+        if (el.type === "checkbox") el.checked = data[id];
+        else el.value = data[id];
+      });
+    } catch (e) {}
+  }
+  rememberSettingsToggle.checked = localStorage.getItem("rememberSettings") === "true";
+  rememberSettingsToggle.addEventListener("change", function () {
+    localStorage.setItem("rememberSettings", rememberSettingsToggle.checked ? "true" : "false");
+    if (rememberSettingsToggle.checked) saveRememberedSettings();
+  });
+  REMEMBERED_SETTINGS_IDS.forEach(function (id) {
+    var el = document.getElementById(id);
+    if (el) el.addEventListener("change", saveRememberedSettings);
+  });
+
+  if (rememberSettingsToggle.checked) {
+    loadRememberedSettings();
+    var sidesMode = resizeDimModeSelect.value === "sides";
+    resizeWHRow.style.display = sidesMode ? "none" : "";
+    resizeSidesRow.style.display = sidesMode ? "" : "none";
+    updateVideoQualityFieldState();
+    audioQualityField.classList.toggle("enabled", audioFormatSelect.value !== "wav" && audioFormatSelect.value !== "flac");
+  }
+
+  updateFieldLabels();
+})();
+</script>
+</body>
+</html>

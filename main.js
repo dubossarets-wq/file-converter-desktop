@@ -559,8 +559,28 @@ ipcMain.handle("inspect-pdf", async function (event, payload) {
 // cancelled "подготовить для быстрой загрузки" (measured: /Linearized true ->
 // false). Running it first also lets gs garbage-collect the objects pdf-lib
 // orphans, instead of carrying them into the result.
+// Re-serializing a big document is the expensive half of this pass — ~6s on a
+// 400 MB catalogue, against 0.3s to parse it. Most of the time there is
+// nothing to remove, so the file is only rewritten when something would
+// actually change. Producer and the dates are not checked on purpose:
+// Ghostscript overwrites both with its own regardless.
+function pdfNeedsStripping(doc, settings) {
+  if (settings.stripMetadata) {
+    var named = [doc.getTitle(), doc.getAuthor(), doc.getSubject(), doc.getKeywords(), doc.getCreator()];
+    if (named.some(function (v) { return v && String(v).trim(); })) return true;
+    if (doc.catalog.get(PDFName.of("Metadata"))) return true;
+  }
+  if (settings.stripHidden) {
+    if (doc.catalog.get(PDFName.of("Names"))) return true;
+    if (doc.catalog.get(PDFName.of("OpenAction"))) return true;
+    if (doc.catalog.get(PDFName.of("AA"))) return true;
+  }
+  return false;
+}
+
 async function stripPdfExtras(inputPath, outputPath, settings) {
   var doc = await PDFDocument.load(fs.readFileSync(inputPath), { updateMetadata: false });
+  if (!pdfNeedsStripping(doc, settings)) return false;
   if (settings.stripMetadata) {
     doc.setTitle(""); doc.setAuthor(""); doc.setSubject("");
     doc.setKeywords([]); doc.setProducer(""); doc.setCreator("");
@@ -574,6 +594,7 @@ async function stripPdfExtras(inputPath, outputPath, settings) {
     doc.catalog.delete(PDFName.of("AA"));
   }
   fs.writeFileSync(outputPath, await doc.save());
+  return true;
 }
 
 ipcMain.handle("compress-pdf", async function (event, payload) {
@@ -590,8 +611,11 @@ ipcMain.handle("compress-pdf", async function (event, payload) {
   if (settings.stripMetadata || settings.stripHidden) {
     try {
       strippedPath = path.join(outDir, jobId + "_pre.pdf");
-      await stripPdfExtras(inputPath, strippedPath, settings);
-      gsInput = strippedPath;
+      if (await stripPdfExtras(inputPath, strippedPath, settings)) {
+        gsInput = strippedPath;
+      } else {
+        strippedPath = null; // nothing to remove — the original goes straight to gs
+      }
     } catch (e) {
       // Best-effort: an unusual structure that pdf-lib can't round-trip
       // shouldn't cost the user the actual compression, so fall back to

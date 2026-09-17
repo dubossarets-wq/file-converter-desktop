@@ -1661,11 +1661,11 @@
       <div class="field">
         <label for="pdfModeSelect">Быстрый режим <span class="tip" tabindex="0" data-tip="Пресеты движка сжатия: чем выше качество, тем меньше сжимаются изображения. «Пользовательский режим» открывает точные настройки ниже."></span></label>
         <select id="pdfModeSelect">
-          <option value="screen">Максимальное сжатие</option>
+          <option value="screen">Максимальное сжатие (72 DPI)</option>
           <option value="web">Для экранов (72 DPI)</option>
-          <option value="ebook" selected>Оптимальное качество</option>
-          <option value="printer">Высокое качество</option>
-          <option value="prepress">Для печати</option>
+          <option value="ebook" selected>Оптимальное качество (150 DPI)</option>
+          <option value="printer">Высокое качество (300 DPI)</option>
+          <option value="prepress">Для печати (300 DPI)</option>
           <option value="custom">Пользовательский режим</option>
         </select>
       </div>
@@ -3010,8 +3010,13 @@
     var isCustom = mode === "custom";
     var preset = PDF_PRESETS[mode];
     if (preset) {
+      // The fields below have to show what the preset actually applies —
+      // they used to keep their previous values, so picking a 72 DPI preset
+      // still displayed "150 DPI" while compressing at 72.
       pdfQualityValue.value = preset.quality;
       pdfQualitySlider.value = preset.quality;
+      pdfDpiSelect.value = String(preset.dpi);
+      pdfImageFormatSelect.value = "jpeg";
     }
     pdfQualityField.classList.toggle("enabled", isCustom);
     pdfDpiField.classList.toggle("enabled", isCustom);

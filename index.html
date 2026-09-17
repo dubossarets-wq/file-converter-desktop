@@ -1662,6 +1662,7 @@
         <label for="pdfModeSelect">Быстрый режим <span class="tip" tabindex="0" data-tip="Пресеты движка сжатия: чем выше качество, тем меньше сжимаются изображения. «Пользовательский режим» открывает точные настройки ниже."></span></label>
         <select id="pdfModeSelect">
           <option value="screen">Максимальное сжатие</option>
+          <option value="web">Для экранов (72 DPI)</option>
           <option value="ebook" selected>Оптимальное качество</option>
           <option value="printer">Высокое качество</option>
           <option value="prepress">Для печати</option>
@@ -1679,6 +1680,7 @@
           <option value="300">300 DPI</option>
           <option value="150" selected>150 DPI</option>
           <option value="96">96 DPI</option>
+          <option value="72">72 DPI (экран)</option>
           <option value="custom">Своё значение…</option>
         </select>
       </div>
@@ -2885,6 +2887,7 @@
   // process and renderer already don't share code, e.g. MIME_BY_FORMAT).
   var PDF_PRESETS = {
     screen: { quality: 40, dpi: 72 },
+    web: { quality: 70, dpi: 72 },
     ebook: { quality: 60, dpi: 150 },
     printer: { quality: 80, dpi: 300 },
     prepress: { quality: 90, dpi: 300 }
@@ -2955,10 +2958,16 @@
         // ratio, not as a claim about the actual source file.
         var scale = settings.dpi ? Math.min(1, settings.dpi / 150) : 1;
         var px = im.width * im.height * scale * scale;
+        // Downscaled images cost more bytes per pixel than the plain curve
+        // suggests — less redundancy to exploit, and the JPEG overhead stays
+        // the same. Measured ~1.35x at 72dpi and 1.0x with no downsampling,
+        // which is what this factor reproduces; without it the estimate ran
+        // ~25% optimistic in exactly the screen-oriented modes.
+        var overhead = 1 + (1 - scale) * 0.7;
         // Deliberately not capped at the image's current size: re-encoding
         // at a higher quality than the source was stored at genuinely does
         // grow the file, and the estimate has to be able to say so.
-        return sum + px * bpp;
+        return sum + px * bpp * overhead;
       }, 0);
     } else {
       imageEstimate = imageBytesTotal;

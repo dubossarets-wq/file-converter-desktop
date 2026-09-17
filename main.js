@@ -376,6 +376,9 @@ var PDF_MIME = "application/pdf";
 // downsample resolutions on their own.
 var PDF_PRESETS = {
   screen: { pdfsettings: "/screen", dpi: 72, quality: 40 },
+  // Same 72 dpi as maximum compression — a screen has no use for more — but
+  // without squeezing the quality down to where artifacts start showing.
+  web: { pdfsettings: "/screen", dpi: 72, quality: 70 },
   ebook: { pdfsettings: "/ebook", dpi: 150, quality: 60 },
   printer: { pdfsettings: "/printer", dpi: 300, quality: 80 },
   prepress: { pdfsettings: "/prepress", dpi: 300, quality: 90 }

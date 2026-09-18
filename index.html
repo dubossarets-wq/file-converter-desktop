@@ -3164,7 +3164,10 @@
         // estimate, and password/corruption detection — before the user
         // even opens the PDF panel, same timing as the video thumbnail above.
         var pPath = window.desktopAPI.getFilePath(file);
-        window.desktopAPI.inspectPdf(pPath).then(function (result) {
+        // Kept on the item so "Применить" can wait for it — a large catalogue
+        // takes several seconds to inspect, and pressing Apply before that
+        // finished used to do nothing at all.
+        item.inspecting = window.desktopAPI.inspectPdf(pPath).then(function (result) {
           if (result.error) {
             item.status = "error";
             item.error = pdfErrorMessage(result.error);
@@ -3173,6 +3176,7 @@
             item.imageCount = result.imageCount;
             item.pdfInfo = { images: result.images, totalBytes: result.totalBytes };
           }
+          item.inspecting = null;
           renderRow(item);
           updatePdfEstimateUI();
         });
@@ -3899,7 +3903,21 @@
     });
   });
 
-  applyPdfBtn.addEventListener("click", function () {
+  applyPdfBtn.addEventListener("click", async function () {
+    var original = applyPdfBtn.textContent;
+    // Files still being inspected used to be filtered out below as if they
+    // had failed, so an early click on a big catalogue silently did nothing.
+    var inspecting = items
+      .filter(function (it) { return it.kind === "pdf" && it.inspecting; })
+      .map(function (it) { return it.inspecting; });
+    if (inspecting.length) {
+      applyPdfBtn.disabled = true;
+      applyPdfBtn.textContent = "Анализ файлов…";
+      await Promise.all(inspecting);
+      applyPdfBtn.textContent = original;
+      applyPdfBtn.disabled = false;
+    }
+
     var settings = currentPdfSettings();
     var key = JSON.stringify(settings);
     var pending = items.filter(function (it) {
@@ -3909,7 +3927,6 @@
       return it.kind === "pdf" && it.pdfInfo && it.lastPdfSettingsKey !== key;
     });
     if (!pending.length) return;
-    var original = applyPdfBtn.textContent;
     applyPdfBtn.disabled = true;
     var done = 0;
     pending.forEach(function (item) {

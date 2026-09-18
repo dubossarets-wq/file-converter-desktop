@@ -414,7 +414,16 @@ function buildPdfArgs(settings, inputPath, outputPath) {
     "-I" + GS_LIB_DIR, "-I" + GS_RESOURCE_DIR,
     "-sDEVICE=pdfwrite", "-dCompatibilityLevel=1.4",
     "-dSAFER", "-o", outputPath,
-    "-dPDFSETTINGS=" + (preset ? preset.pdfsettings : "/default")
+    "-dPDFSETTINGS=" + (preset ? preset.pdfsettings : "/default"),
+    // Must follow PDFSETTINGS so it overrides the preset's own strategy.
+    // /printer, /prepress and /default leave colour unchanged or keep it
+    // device-independent, and on transparency with a blending colour space
+    // (typical of Figma/Photoshop exports) gs then silently DROPS the
+    // content it can't carry over — exit code 0, no stderr. A real catalogue
+    // came out of "Высокое качество" with 0 of 370 images and a near-blank
+    // page. Converting to RGB is what /screen and /ebook already do, and
+    // with it every mode keeps the page intact.
+    "-sColorConversionStrategy=RGB"
   ];
 
   var postScript = "";
